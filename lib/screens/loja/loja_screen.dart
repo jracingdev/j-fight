@@ -1,5 +1,5 @@
-import 'dart:io';
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import '../../utils/image_utils.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
@@ -387,12 +387,7 @@ class _ProdutoImagem extends StatelessWidget {
     final path = fotoUrl?.isNotEmpty == true ? fotoUrl : null;
 
     if (path != null) {
-      final isNetwork = path.startsWith('http');
-      return isNetwork
-          ? Image.network(path, fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _fallbackYoutube(youtubeThumb))
-          : Image.file(File(path), fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _fallbackYoutube(youtubeThumb));
+      return imageWidgetFromPath(path, fit: BoxFit.cover, errorWidget: _fallbackYoutube(youtubeThumb));
     }
 
     return _fallbackYoutube(youtubeThumb);
@@ -519,9 +514,7 @@ class _ProdutoSheetState extends State<_ProdutoSheet> {
             clipBehavior: Clip.antiAlias,
             child: _fotoUrl != null
                 ? Stack(fit: StackFit.expand, children: [
-                    _fotoUrl!.startsWith('http')
-                        ? Image.network(_fotoUrl!, fit: BoxFit.cover)
-                        : Image.file(File(_fotoUrl!), fit: BoxFit.cover),
+                    imageWidgetFromPath(_fotoUrl!, fit: BoxFit.cover),
                     Positioned(bottom: 6, right: 6,
                       child: Container(padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(6)),
@@ -662,3 +655,6 @@ class _ProdutoSheetState extends State<_ProdutoSheet> {
     );
   }
 }
+
+
+

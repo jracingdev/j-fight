@@ -2,6 +2,7 @@
 import 'package:provider/provider.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/backup/drive_backup.dart';
+import '../../core/constants.dart';
 import '../../core/theme.dart';
 import '../../models/aluno.dart';
 import '../../models/mensalidade.dart';
@@ -10,6 +11,7 @@ import '../../repositories/aluno_repository.dart';
 import '../../repositories/mensalidade_repository.dart';
 import '../../utils/bjj_utils.dart';
 import '../../widgets/faixa_badge.dart';
+import '../sobre_screen.dart';
 
 class PerfilScreen extends StatefulWidget {
   const PerfilScreen({super.key});
@@ -247,6 +249,41 @@ class _PerfilScreenState extends State<PerfilScreen> {
                   ),
                 ),
               ],
+              const SizedBox(height: 20),
+
+              // ── Credenciamento GFT ─────────────────
+              Card(child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(children: [
+                  Image.asset('assets/images/gft_logo.png', height: 60,
+                    errorBuilder: (_, __, ___) => const Icon(Icons.verified_outlined, size: 40, color: verdeEscuro)),
+                  const SizedBox(height: 8),
+                  const Text(academiaCredenciada,
+                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: verdeEscuro),
+                      textAlign: TextAlign.center),
+                  Text(academiaCredencial,
+                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                  const Divider(height: 16),
+                  Text('Professor: $professorNome',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      textAlign: TextAlign.center),
+                  Text('$professorGraduacao · $professorRegistro',
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                      textAlign: TextAlign.center),
+                ]),
+              )),
+              const SizedBox(height: 12),
+
+              // ── Sobre o App ───────────────────────
+              ListTile(
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SobreScreen())),
+                leading: const Icon(Icons.info_outline, color: verdeEscuro),
+                title: const Text('Sobre o App'),
+                subtitle: Text('v$appVersion · $developerNome', style: const TextStyle(fontSize: 11)),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                tileColor: Colors.white,
+              ),
               const SizedBox(height: 20),
             ]),
     );

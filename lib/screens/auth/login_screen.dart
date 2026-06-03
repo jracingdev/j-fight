@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/auth/auth_provider.dart';
+import '../../core/auth/auth_service.dart';
+import '../../core/constants.dart';
 import '../../core/theme.dart';
 import 'criar_conta_screen.dart';
 
@@ -67,10 +69,23 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 const Text('CT SM BJJ', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white)),
                 const Text('Academia de Jiu-Jitsu', style: TextStyle(color: Colors.white70, fontSize: 14)),
-                const SizedBox(height: 40),
+                const SizedBox(height: 6),
+                // Credenciamento GFT
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(20)),
+                  child: Column(children: [
+                    const Text(academiaCredenciada,
+                        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+                        textAlign: TextAlign.center),
+                    Text(academiaCredencial,
+                        style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                  ]),
+                ),
+                const SizedBox(height: 28),
 
                 // Card login
                 Container(

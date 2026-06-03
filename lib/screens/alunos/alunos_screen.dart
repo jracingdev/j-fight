@@ -1,5 +1,5 @@
-import 'dart:io';
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import '../../utils/image_utils.dart';
 import '../../core/theme.dart';
 import '../../models/aluno.dart';
 import '../../repositories/aluno_repository.dart';
@@ -262,10 +262,8 @@ class _AlunoAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (fotoUrl != null && fotoUrl!.isNotEmpty) {
-      final isNetwork = fotoUrl!.startsWith('http');
-      final ImageProvider img = isNetwork
-          ? NetworkImage(fotoUrl!) as ImageProvider
-          : FileImage(File(fotoUrl!));
+      final isRemote = fotoUrl!.startsWith('http') || fotoUrl!.startsWith('blob:');
+      final ImageProvider img = imageProviderFromPath(fotoUrl!);
       return CircleAvatar(radius: radius, backgroundImage: img,
           onBackgroundImageError: (_, __) {});
     }
@@ -277,3 +275,5 @@ class _AlunoAvatar extends StatelessWidget {
     );
   }
 }
+
+

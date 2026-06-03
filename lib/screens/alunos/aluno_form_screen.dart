@@ -1,5 +1,5 @@
-import 'dart:io';
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import '../../utils/image_utils.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -177,9 +177,7 @@ class _AlunoFormScreenState extends State<AlunoFormScreen> {
                 radius: 52,
                 backgroundColor: Colors.grey.shade200,
                 backgroundImage: _fotoPath != null
-                    ? (_fotoPath!.startsWith('http')
-                        ? NetworkImage(_fotoPath!) as ImageProvider
-                        : FileImage(File(_fotoPath!)))
+                    ? imageProviderFromPath(_fotoPath!)
                     : null,
                 child: _fotoPath == null
                     ? const Icon(Icons.person, size: 52, color: Colors.grey)
@@ -373,3 +371,5 @@ class _AlunoFormScreenState extends State<AlunoFormScreen> {
         ),
       );
 }
+
+
