@@ -6,8 +6,12 @@ import 'package:uuid/uuid.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/theme.dart';
+import '../../models/pedido.dart';
 import '../../models/produto.dart';
+import '../../repositories/pedido_repository.dart';
 import '../../repositories/produto_repository.dart';
+import 'pedidos_admin_screen.dart';
+import 'meus_pedidos_screen.dart';
 
 class LojaScreen extends StatefulWidget {
   const LojaScreen({super.key});
@@ -15,11 +19,12 @@ class LojaScreen extends StatefulWidget {
   State<LojaScreen> createState() => _LojaScreenState();
 }
 
-class _LojaScreenState extends State<LojaScreen> {
+class _LojaScreenState extends State<LojaScreen> with SingleTickerProviderStateMixin {
   final _repo = ProdutoRepository();
   List<Produto> _produtos = [];
   bool _loading = true;
   String _filtroCategoria = 'todos';
+  late TabController _tabs;
 
   static const _categorias = ['kimono', 'faixa', 'camisa', 'short', 'outro'];
   static const _catLabel = {'kimono':'Kimono','faixa':'Faixa','camisa':'Camisa','short':'Short','outro':'Outro'};
@@ -29,7 +34,15 @@ class _LojaScreenState extends State<LojaScreen> {
   };
 
   @override
-  void initState() { super.initState(); _load(); }
+  void initState() {
+    super.initState();
+    final isAdmin = context.read<AuthProvider>().isAdmin;
+    _tabs = TabController(length: isAdmin ? 2 : 2, vsync: this);
+    _load();
+  }
+
+  @override
+  void dispose() { _tabs.dispose(); super.dispose(); }
 
   Future<void> _load() async {
     setState(() => _loading = true);
@@ -56,7 +69,21 @@ class _LojaScreenState extends State<LojaScreen> {
   Widget build(BuildContext context) {
     final isAdmin = context.watch<AuthProvider>().isAdmin;
     return Scaffold(
-      appBar: AppBar(title: const Text('Loja SM BJJ'), actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _load)]),
+      appBar: AppBar(
+        title: const Text('Loja SM BJJ'),
+        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _load)],
+        bottom: TabBar(
+          controller: _tabs,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white60,
+          indicatorColor: Colors.white,
+          tabs: isAdmin
+              ? const [Tab(icon: Icon(Icons.shopping_bag_outlined, size: 18), text: 'Produtos'),
+                       Tab(icon: Icon(Icons.list_alt, size: 18), text: 'Pedidos')]
+              : const [Tab(icon: Icon(Icons.shopping_bag_outlined, size: 18), text: 'Produtos'),
+                       Tab(icon: Icon(Icons.receipt_long_outlined, size: 18), text: 'Meus Pedidos')],
+        ),
+      ),
       floatingActionButton: isAdmin ? FloatingActionButton.extended(
         onPressed: () async {
           await showModalBottomSheet(context: context, isScrollControlled: true, useSafeArea: true,
@@ -68,7 +95,9 @@ class _LojaScreenState extends State<LojaScreen> {
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text('Novo Produto', style: TextStyle(color: Colors.white)),
       ) : null,
-      body: Column(children: [
+      body: TabBarView(controller: _tabs, children: [
+        // Aba Produtos
+        Column(children: [
         // Filtros
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -101,12 +130,79 @@ class _LojaScreenState extends State<LojaScreen> {
                             );
                           } : null,
                           onDelete: isAdmin ? () => _deletar(p) : null,
+                          onSolicitar: !isAdmin ? () async {
+                            // Cria pedido e notifica professor
+                            await _criarPedido(context, p);
+                          } : null,
                         );
                       },
                     ),
         ),
+        ]),
+        // Aba Pedidos (admin) ou Meus Pedidos (aluno)
+        isAdmin ? const PedidosAdminScreen() : const MeusPedidosScreen(),
       ]),
     );
+  }
+
+  Future<void> _criarPedido(BuildContext ctx, Produto p) async {
+    final user = ctx.read<AuthProvider>().usuario;
+    if (user == null) return;
+
+    // Selecionar variante se houver
+    String? cor, tamanho;
+    // Sheet de seleção de variante + quantidade
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
+      context: ctx, isScrollControlled: true, useSafeArea: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => _SolicitarSheet(produto: p),
+    );
+    if (result == null) return;
+
+    cor = result['cor'];
+    tamanho = result['tamanho'];
+    final qtd = result['quantidade'] as int;
+    final obs = result['observacoes'] as String?;
+
+    final pedido = Pedido(
+      id: '',
+      alunoNome: user.nome,
+      alunoEmail: user.email,
+      alunoTelefone: result['telefone'],
+      produtoId: p.id,
+      produtoNome: p.nome,
+      varianteCor: cor,
+      varianteTamanho: tamanho,
+      quantidade: qtd,
+      valorUnitario: p.preco,
+      valorTotal: p.preco * qtd,
+      status: 'pendente',
+      observacoes: obs,
+    );
+
+    await PedidoRepository().criar(pedido);
+
+    // Notifica professor via WhatsApp
+    const professorTel = '5521975396996';
+    final msg = '🛒 Novo pedido na Loja SM BJJ!\n\n'
+        'Aluno: *${user.nome}*\n'
+        'Produto: *${p.nome}*\n'
+        '${cor != null ? 'Cor: $cor\n' : ''}'
+        '${tamanho != null ? 'Tamanho: $tamanho\n' : ''}'
+        'Quantidade: $qtd\n'
+        'Total: R\$ ${(p.preco * qtd).toStringAsFixed(2)}\n'
+        '${obs != null ? 'Obs: $obs\n' : ''}\n'
+        'Verifique o app para confirmar! 🥋';
+    final uri = Uri.parse('https://wa.me/$professorTel?text=${Uri.encodeComponent(msg)}');
+    if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
+
+    if (ctx.mounted) {
+      ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
+        content: Text('Pedido enviado! Acompanhe em "Meus Pedidos".'),
+        backgroundColor: verdeEscuro,
+      ));
+      _tabs.animateTo(1);
+    }
   }
 }
 
@@ -132,6 +228,95 @@ class _FiltroChip extends StatelessWidget {
   }
 }
 
+// ── Sheet de solicitação com variante e quantidade ───────────
+class _SolicitarSheet extends StatefulWidget {
+  final Produto produto;
+  const _SolicitarSheet({required this.produto});
+  @override
+  State<_SolicitarSheet> createState() => _SolicitarSheetState();
+}
+
+class _SolicitarSheetState extends State<_SolicitarSheet> {
+  String? _cor, _tamanho;
+  int _qtd = 1;
+  final _obsCtrl = TextEditingController();
+  final _telCtrl = TextEditingController();
+
+  @override
+  void dispose() { _obsCtrl.dispose(); _telCtrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.produto;
+    final bottom = MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 20, 20, bottom + 20),
+      child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text('Solicitar: ${p.nome}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+        Text('R\$ ${p.preco.toStringAsFixed(2)} / unidade', style: TextStyle(color: Colors.grey.shade600)),
+        const SizedBox(height: 16),
+
+        // Telefone de contato
+        TextField(controller: _telCtrl,
+          decoration: const InputDecoration(labelText: 'Seu telefone (para contato)', prefixIcon: Icon(Icons.phone_outlined), isDense: true),
+          keyboardType: TextInputType.phone),
+        const SizedBox(height: 12),
+
+        // Cor
+        const Text('Cor (opcional):', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+        const SizedBox(height: 6),
+        TextField(onChanged: (v) => setState(() => _cor = v.isEmpty ? null : v),
+          decoration: const InputDecoration(hintText: 'Ex: Branco, Azul, Preto...', isDense: true)),
+        const SizedBox(height: 12),
+
+        // Tamanho
+        const Text('Tamanho (opcional):', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+        const SizedBox(height: 6),
+        TextField(onChanged: (v) => setState(() => _tamanho = v.isEmpty ? null : v),
+          decoration: const InputDecoration(hintText: 'Ex: A2, M, G...', isDense: true)),
+        const SizedBox(height: 12),
+
+        // Quantidade
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          const Text('Quantidade:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+          Row(children: [
+            IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: _qtd > 1 ? () => setState(() => _qtd--) : null),
+            Text('$_qtd', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+            IconButton(icon: const Icon(Icons.add_circle_outline, color: verdeEscuro), onPressed: () => setState(() => _qtd++)),
+          ]),
+        ]),
+
+        // Total
+        Container(padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(8)),
+          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            const Text('Total do pedido:', style: TextStyle(fontWeight: FontWeight.w700)),
+            Text('R\$ ${(p.preco * _qtd).toStringAsFixed(2)}',
+                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: verdeEscuro)),
+          ])),
+        const SizedBox(height: 12),
+
+        // Observações
+        TextField(controller: _obsCtrl,
+          decoration: const InputDecoration(labelText: 'Observações (opcional)', isDense: true),
+          maxLines: 2),
+        const SizedBox(height: 16),
+
+        ElevatedButton.icon(
+          onPressed: () => Navigator.pop(context, {
+            'cor': _cor, 'tamanho': _tamanho, 'quantidade': _qtd,
+            'observacoes': _obsCtrl.text.trim().isEmpty ? null : _obsCtrl.text.trim(),
+            'telefone': _telCtrl.text.trim().isEmpty ? null : _telCtrl.text.trim(),
+          }),
+          icon: const Icon(Icons.message),
+          label: Text('Enviar Pedido — R\$ ${(p.preco * _qtd).toStringAsFixed(2)}'),
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade600),
+        ),
+      ])),
+    );
+  }
+}
+
 class _ProdutoCard extends StatelessWidget {
   final Produto produto;
   final String catLabel;
@@ -139,7 +324,8 @@ class _ProdutoCard extends StatelessWidget {
   final bool isAdmin;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
-  const _ProdutoCard({required this.produto, required this.catLabel, required this.catColor, required this.isAdmin, this.onEdit, this.onDelete});
+  final VoidCallback? onSolicitar;
+  const _ProdutoCard({required this.produto, required this.catLabel, required this.catColor, required this.isAdmin, this.onEdit, this.onDelete, this.onSolicitar});
 
   @override
   Widget build(BuildContext context) {
@@ -162,6 +348,18 @@ class _ProdutoCard extends StatelessWidget {
               const SizedBox(width: 8),
               IconButton(onPressed: onDelete, icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red), padding: EdgeInsets.zero, constraints: const BoxConstraints()),
             ]),
+            if (!isAdmin) ...[
+              const SizedBox(height: 6),
+              SizedBox(width: double.infinity, child: ElevatedButton.icon(
+                onPressed: onSolicitar,
+                icon: const Icon(Icons.message, size: 14),
+                label: const Text('Solicitar', style: TextStyle(fontSize: 12)),
+                style: ElevatedButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  backgroundColor: Colors.green.shade600,
+                ),
+              )),
+            ],
           ])),
         ]),
       ),

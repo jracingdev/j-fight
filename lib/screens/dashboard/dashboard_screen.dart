@@ -154,12 +154,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         const SizedBox(height: 20),
 
-        _SectionTitle('Quadro de Avisos'),
-        _AvisosCard(avisos: _avisos),
+        _AvisosCard(avisos: _avisos, isAdmin: true, onRefresh: _load),
         const SizedBox(height: 20),
 
-        _SectionTitle('Calendário da Equipe'),
-        _EventosCard(eventos: _eventos),
+        _EventosCard(eventos: _eventos, isAdmin: true, onRefresh: _load),
         const SizedBox(height: 20),
       ],
     );
@@ -170,10 +168,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       padding: const EdgeInsets.all(16),
       children: [
         _SectionTitle('Avisos'),
-        _AvisosCard(avisos: _avisos),
+        _AvisosCard(avisos: _avisos, isAdmin: false),
         const SizedBox(height: 20),
         _SectionTitle('Próximos Eventos'),
-        _EventosCard(eventos: _eventos),
+        _EventosCard(eventos: _eventos, isAdmin: false),
         const SizedBox(height: 20),
       ],
     );
@@ -246,21 +244,48 @@ class _AlertaBanner extends StatelessWidget {
 
 class _AvisosCard extends StatelessWidget {
   final List<Aviso> avisos;
-  const _AvisosCard({required this.avisos});
+  final bool isAdmin;
+  final VoidCallback? onRefresh;
+  const _AvisosCard({required this.avisos, this.isAdmin = false, this.onRefresh});
 
   static const _cores = {
-    'alerta': Colors.orange, 'importante': Colors.red,
-    'bjj_news': Colors.purple,
+    'alerta': Colors.orange, 'importante': Colors.red, 'bjj_news': Colors.purple,
   };
   static const _icons = {
-    'alerta': Icons.warning_amber_outlined, 'importante': Icons.error_outline,
-    'bjj_news': Icons.newspaper,
+    'alerta': Icons.warning_amber_outlined, 'importante': Icons.error_outline, 'bjj_news': Icons.newspaper,
   };
+
+  Future<void> _deletar(BuildContext ctx, Aviso a) async {
+    final ok = await showDialog<bool>(context: ctx,
+      builder: (_) => AlertDialog(content: Text('Remover "${a.titulo}"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Remover', style: TextStyle(color: Colors.red))),
+        ]));
+    if (ok == true) {
+      await AvisoRepository().deletar(a.id);
+      onRefresh?.call();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: Column(children: [
+        // Header com botão novo aviso para admin
+        if (isAdmin) Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
+          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            const Text('Quadro de Avisos', style: TextStyle(fontWeight: FontWeight.w700)),
+            TextButton.icon(
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AvisosScreen()))
+                  .then((_) => onRefresh?.call()),
+              icon: const Icon(Icons.add, size: 16),
+              label: const Text('Gerenciar'),
+              style: TextButton.styleFrom(foregroundColor: verdeEscuro),
+            ),
+          ]),
+        ),
         if (avisos.isEmpty)
           Padding(padding: const EdgeInsets.all(20),
             child: Center(child: Text('Nenhum aviso no momento.', style: TextStyle(color: Colors.grey.shade500))))
@@ -282,9 +307,15 @@ class _AvisosCard extends StatelessWidget {
                     child: Text('🔗 Ver mais', style: TextStyle(fontSize: 11, color: cor, fontWeight: FontWeight.w600)),
                   ),
               ]),
+              trailing: isAdmin ? IconButton(
+                icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                onPressed: () => _deletar(context, a),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ) : null,
             );
           }),
-        ListTile(
+        if (!isAdmin) ListTile(
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AvisosScreen())),
           title: const Text('Ver todos os avisos', style: TextStyle(color: verdeEscuro, fontWeight: FontWeight.w600, fontSize: 13)),
           trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: verdeEscuro),
@@ -296,7 +327,22 @@ class _AvisosCard extends StatelessWidget {
 
 class _EventosCard extends StatelessWidget {
   final List<Evento> eventos;
-  const _EventosCard({required this.eventos});
+  final bool isAdmin;
+  final VoidCallback? onRefresh;
+  const _EventosCard({required this.eventos, this.isAdmin = false, this.onRefresh});
+
+  Future<void> _deletar(BuildContext ctx, Evento e) async {
+    final ok = await showDialog<bool>(context: ctx,
+      builder: (_) => AlertDialog(content: Text('Remover "${e.titulo}"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Remover', style: TextStyle(color: Colors.red))),
+        ]));
+    if (ok == true) {
+      await EventoRepository().deletar(e.id);
+      onRefresh?.call();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -305,6 +351,19 @@ class _EventosCard extends StatelessWidget {
 
     return Card(
       child: Column(children: [
+        if (isAdmin) Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
+          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            const Text('Próximos Eventos', style: TextStyle(fontWeight: FontWeight.w700)),
+            TextButton.icon(
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CalendarioScreen()))
+                  .then((_) => onRefresh?.call()),
+              icon: const Icon(Icons.add, size: 16),
+              label: const Text('Gerenciar'),
+              style: TextButton.styleFrom(foregroundColor: verdeEscuro),
+            ),
+          ]),
+        ),
         if (proximos.isEmpty)
           Padding(padding: const EdgeInsets.all(20),
             child: Center(child: Text('Nenhum evento próximo.', style: TextStyle(color: Colors.grey.shade500))))
@@ -323,7 +382,8 @@ class _EventosCard extends StatelessWidget {
               leading: Icon(icon, color: cor),
               title: Text(e.titulo, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
               subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('${e.data}${e.local != null ? ' · ${e.local}' : ''}', style: const TextStyle(fontSize: 12)),
+                Text('${e.data}${e.horaInicio != null ? ' às ${e.horaInicio}${e.horaFim != null ? '–${e.horaFim}' : ''}' : ''}${e.local != null ? ' · ${e.local}' : ''}',
+                    style: const TextStyle(fontSize: 12)),
                 if (e.linkUrl != null && e.linkUrl!.isNotEmpty)
                   GestureDetector(
                     onTap: () async {
@@ -333,9 +393,15 @@ class _EventosCard extends StatelessWidget {
                     child: Text('🔗 Inscrições / Mais info', style: TextStyle(fontSize: 11, color: cor, fontWeight: FontWeight.w600)),
                   ),
               ]),
+              trailing: isAdmin ? IconButton(
+                icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                onPressed: () => _deletar(context, e),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ) : null,
             );
           }),
-        ListTile(
+        if (!isAdmin) ListTile(
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CalendarioScreen())),
           title: const Text('Ver calendário completo', style: TextStyle(color: verdeEscuro, fontWeight: FontWeight.w600, fontSize: 13)),
           trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: verdeEscuro),

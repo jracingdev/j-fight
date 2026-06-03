@@ -153,6 +153,9 @@ class _EventoCard extends StatelessWidget {
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(evento.titulo, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
                 Text('$label · $dataFormatada', style: TextStyle(fontSize: 12, color: cor, fontWeight: FontWeight.w600)),
+                if (evento.horaInicio != null)
+                  Text('🕐 ${evento.horaInicio}${evento.horaFim != null ? ' – ${evento.horaFim}' : ''}',
+                      style: TextStyle(fontSize: 11, color: cor.withValues(alpha: 0.8))),
               ])),
               if (isAdmin) ...[
                 IconButton(icon: const Icon(Icons.edit_outlined, size: 18), onPressed: onEdit, padding: EdgeInsets.zero, constraints: const BoxConstraints()),
@@ -217,6 +220,8 @@ class _EventoSheetState extends State<_EventoSheet> {
   final _uuid = const Uuid();
   late final _tituloCtrl = TextEditingController(text: widget.evento?.titulo ?? '');
   late final _dataCtrl = TextEditingController(text: widget.evento?.data ?? '');
+  late final _horaInicioCtrl = TextEditingController(text: widget.evento?.horaInicio ?? '');
+  late final _horaFimCtrl = TextEditingController(text: widget.evento?.horaFim ?? '');
   late final _descCtrl = TextEditingController(text: widget.evento?.descricao ?? '');
   late final _localCtrl = TextEditingController(text: widget.evento?.local ?? '');
   late final _orgCtrl = TextEditingController(text: widget.evento?.organizador ?? '');
@@ -232,7 +237,8 @@ class _EventoSheetState extends State<_EventoSheet> {
 
   @override
   void dispose() {
-    _tituloCtrl.dispose(); _dataCtrl.dispose(); _descCtrl.dispose();
+    _tituloCtrl.dispose(); _dataCtrl.dispose(); _horaInicioCtrl.dispose();
+    _horaFimCtrl.dispose(); _descCtrl.dispose();
     _localCtrl.dispose(); _orgCtrl.dispose(); _linkCtrl.dispose();
     super.dispose();
   }
@@ -243,9 +249,19 @@ class _EventoSheetState extends State<_EventoSheet> {
       initialDate: DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
-      locale: const Locale('pt', 'BR'),
     );
     if (picked != null) setState(() => _dataCtrl.text = DateFormat('yyyy-MM-dd').format(picked));
+  }
+
+  Future<void> _pickHora(TextEditingController ctrl) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      builder: (ctx, child) => MediaQuery(data: MediaQuery.of(ctx).copyWith(alwaysUse24HourFormat: true), child: child!),
+    );
+    if (picked != null) {
+      setState(() => ctrl.text = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}');
+    }
   }
 
   Future<void> _salvar() async {
@@ -255,6 +271,8 @@ class _EventoSheetState extends State<_EventoSheet> {
       id: widget.evento?.id ?? _uuid.v4(),
       titulo: _tituloCtrl.text.trim(),
       data: _dataCtrl.text,
+      horaInicio: _horaInicioCtrl.text.trim().isEmpty ? null : _horaInicioCtrl.text.trim(),
+      horaFim: _horaFimCtrl.text.trim().isEmpty ? null : _horaFimCtrl.text.trim(),
       tipo: _tipo,
       descricao: _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
       local: _localCtrl.text.trim().isEmpty ? null : _localCtrl.text.trim(),
@@ -292,16 +310,35 @@ class _EventoSheetState extends State<_EventoSheet> {
         const SizedBox(height: 12),
         TextField(controller: _tituloCtrl, decoration: const InputDecoration(labelText: 'Título *', isDense: true)),
         const SizedBox(height: 12),
+        // Data
         TextField(
-          controller: _dataCtrl,
-          readOnly: true,
-          onTap: _pickData,
-          decoration: InputDecoration(
-            labelText: 'Data *',
-            isDense: true,
-            suffixIcon: IconButton(icon: const Icon(Icons.calendar_today), onPressed: _pickData),
-          ),
+          controller: _dataCtrl, readOnly: true, onTap: _pickData,
+          decoration: InputDecoration(labelText: 'Data *', isDense: true,
+            suffixIcon: IconButton(icon: const Icon(Icons.calendar_today), onPressed: _pickData)),
         ),
+        const SizedBox(height: 10),
+        // Horários
+        Row(children: [
+          Expanded(child: TextField(
+            controller: _horaInicioCtrl, readOnly: true,
+            onTap: () => _pickHora(_horaInicioCtrl),
+            decoration: InputDecoration(labelText: 'Hora início', isDense: true,
+              prefixIcon: const Icon(Icons.access_time, size: 18),
+              suffixIcon: _horaInicioCtrl.text.isNotEmpty
+                ? IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: () => setState(() => _horaInicioCtrl.clear()))
+                : null),
+          )),
+          const SizedBox(width: 10),
+          Expanded(child: TextField(
+            controller: _horaFimCtrl, readOnly: true,
+            onTap: () => _pickHora(_horaFimCtrl),
+            decoration: InputDecoration(labelText: 'Hora fim', isDense: true,
+              prefixIcon: const Icon(Icons.access_time, size: 18),
+              suffixIcon: _horaFimCtrl.text.isNotEmpty
+                ? IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: () => setState(() => _horaFimCtrl.clear()))
+                : null),
+          )),
+        ]),
         const SizedBox(height: 12),
         TextField(controller: _localCtrl, decoration: const InputDecoration(labelText: 'Local', isDense: true, prefixIcon: Icon(Icons.location_on_outlined))),
         const SizedBox(height: 12),
