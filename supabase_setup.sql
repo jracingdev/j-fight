@@ -41,18 +41,27 @@ create policy "Inserção via trigger" on public.usuarios for insert with check 
 -- ── Trigger: cria perfil ao registrar ───────────────────────
 create or replace function public.handle_new_user()
 returns trigger as $$
+declare
+  v_email text := lower(trim(coalesce(new.email, '')));
+  v_role text := 'aluno';
 begin
-  insert into public.usuarios (id, nome, email, role)
+  if v_email = 'admin@smbj.com' then
+    v_role := 'admin';
+  end if;
+  insert into public.usuarios (id, nome, email, role, foto_url)
   values (
     new.id,
-    coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
-    new.email,
-    case when new.email = 'admin@smbj.com' then 'admin' else 'aluno' end
+    coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', split_part(v_email, '@', 1)),
+    coalesce(new.email, v_email),
+    v_role,
+    new.raw_user_meta_data->>'avatar_url'
   )
-  on conflict (id) do nothing;
+  on conflict (id) do update set
+    email = excluded.email,
+    nome = coalesce(public.usuarios.nome, excluded.nome);
   return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer set search_path = public;
 
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created

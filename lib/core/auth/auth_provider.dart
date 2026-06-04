@@ -3,17 +3,20 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/aluno.dart';
 import '../../models/usuario.dart';
 import '../../repositories/aluno_repository.dart';
+import 'auth_result.dart';
 import 'auth_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   Usuario? _usuario;
   Aluno? _alunoVinculado;
   bool _carregando = true;
+  String? _mensagemAuth;
   final _alunoRepo = AlunoRepository();
 
   Usuario? get usuario => _usuario;
   Aluno? get alunoVinculado => _alunoVinculado;
   bool get carregando => _carregando;
+  String? get mensagemAuth => _mensagemAuth;
   bool get autenticado => _usuario != null;
   bool get isAdmin => _usuario?.isAdmin ?? false;
   bool get precisaCompletarCadastro =>
@@ -32,8 +35,11 @@ class AuthProvider extends ChangeNotifier {
       if (event == AuthChangeEvent.signedIn ||
           event == AuthChangeEvent.tokenRefreshed ||
           event == AuthChangeEvent.userUpdated) {
-        _usuario = await AuthService.instance.recuperarSessao();
-        await _carregarAlunoVinculado();
+        final user = data.session?.user ?? Supabase.instance.client.auth.currentUser;
+        if (user != null) {
+          _usuario = await AuthService.instance.ensurePerfilUsuario(user);
+          await _carregarAlunoVinculado();
+        }
       } else if (event == AuthChangeEvent.signedOut) {
         _usuario = null;
         _alunoVinculado = null;
@@ -62,30 +68,30 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> loginEmail(String email, String senha) async {
-    final user = await AuthService.instance.loginComEmail(email, senha);
-    if (user != null) {
-      _usuario = user;
+  Future<AuthResult> loginEmail(String email, String senha) async {
+    final result = await AuthService.instance.loginComEmail(email, senha);
+    _mensagemAuth = result.message;
+    if (result.usuario != null) {
+      _usuario = result.usuario;
       await _carregarAlunoVinculado();
       notifyListeners();
-      return true;
     }
-    return false;
+    return result;
   }
 
-  Future<void> loginGoogle() async {
-    await AuthService.instance.loginComGoogle();
+  Future<AuthResult> loginGoogle() async {
+    return AuthService.instance.loginComGoogle();
   }
 
-  Future<bool> criarConta(String nome, String email, String senha) async {
-    final user = await AuthService.instance.criarConta(nome, email, senha);
-    if (user != null) {
-      _usuario = user;
+  Future<AuthResult> criarConta(String nome, String email, String senha) async {
+    final result = await AuthService.instance.criarConta(nome, email, senha);
+    _mensagemAuth = result.message;
+    if (result.usuario != null) {
+      _usuario = result.usuario;
       _alunoVinculado = null;
       notifyListeners();
-      return true;
     }
-    return false;
+    return result;
   }
 
   Future<void> vincularAlunoSalvo(Aluno aluno) async {
@@ -100,6 +106,7 @@ class AuthProvider extends ChangeNotifier {
     await AuthService.instance.logout();
     _usuario = null;
     _alunoVinculado = null;
+    _mensagemAuth = null;
     notifyListeners();
   }
 

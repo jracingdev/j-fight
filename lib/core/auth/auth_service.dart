@@ -1,58 +1,188 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../supabase_service.dart';
 import '../../models/usuario.dart';
+import 'auth_result.dart';
+
+/// Apenas estes e-mails podem ter role admin (case-insensitive).
+const Set<String> kAdminEmails = {
+  'admin@smbj.com',
+};
 
 class AuthService {
   static final AuthService instance = AuthService._();
   AuthService._();
 
-  Future<Usuario?> loginComEmail(String email, String senha) async {
+  static String roleForEmail(String? email) {
+    final normalized = email?.trim().toLowerCase();
+    if (normalized != null && kAdminEmails.contains(normalized)) {
+      return 'admin';
+    }
+    return 'aluno';
+  }
+
+  Future<AuthResult> loginComEmail(String email, String senha) async {
     try {
-      final res = await supabase.auth.signInWithPassword(email: email, password: senha);
-      if (res.user == null) return null;
-      return await _buscarPerfil(res.user!.id);
-    } catch (_) {
-      return null;
+      final res = await supabase.auth.signInWithPassword(
+        email: email.trim(),
+        password: senha,
+      );
+      if (res.user == null) {
+        return const AuthResult(status: AuthStatus.error, message: 'Email ou senha incorretos.');
+      }
+      final usuario = await ensurePerfilUsuario(res.user!);
+      if (usuario == null) {
+        return const AuthResult(
+          status: AuthStatus.error,
+          message: 'Não foi possível carregar seu perfil. Tente novamente.',
+        );
+      }
+      return AuthResult(status: AuthStatus.success, usuario: usuario);
+    } on AuthException catch (e) {
+      return AuthResult(status: AuthStatus.error, message: _mensagemAuth(e));
+    } catch (e) {
+      debugPrint('loginComEmail: $e');
+      return const AuthResult(status: AuthStatus.error, message: 'Erro ao entrar. Verifique sua conexão.');
     }
   }
 
-  Future<void> loginComGoogle() async {
-    await supabase.auth.signInWithOAuth(OAuthProvider.google);
+  Future<AuthResult> loginComGoogle() async {
+    try {
+      await supabase.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: kIsWeb ? null : 'io.supabase.flutter://callback',
+        authScreenLaunchMode: LaunchMode.externalApplication,
+      );
+      return const AuthResult(status: AuthStatus.success);
+    } on AuthException catch (e) {
+      return AuthResult(status: AuthStatus.error, message: _mensagemAuth(e));
+    } catch (e) {
+      debugPrint('loginComGoogle: $e');
+      return const AuthResult(status: AuthStatus.error, message: 'Não foi possível abrir o login Google.');
+    }
   }
 
-  Future<Usuario?> criarConta(String nome, String email, String senha) async {
+  Future<AuthResult> criarConta(String nome, String email, String senha) async {
     try {
       final res = await supabase.auth.signUp(
-        email: email,
+        email: email.trim(),
         password: senha,
-        data: {'full_name': nome},
+        data: {'full_name': nome.trim()},
       );
-      if (res.user == null) return null;
-      await Future.delayed(const Duration(milliseconds: 800));
-      return await _buscarPerfil(res.user!.id);
-    } catch (_) {
-      return null;
+      if (res.user == null) {
+        return const AuthResult(status: AuthStatus.error, message: 'Não foi possível criar a conta.');
+      }
+
+      if (res.session == null) {
+        return const AuthResult(
+          status: AuthStatus.needsEmailConfirmation,
+          message:
+              'Conta criada! Verifique seu e-mail e confirme o cadastro antes de entrar.',
+        );
+      }
+
+      final usuario = await ensurePerfilUsuario(res.user!, nome: nome.trim());
+      if (usuario == null) {
+        return const AuthResult(
+          status: AuthStatus.error,
+          message: 'Conta criada, mas o perfil não foi gerado. Tente entrar em alguns segundos.',
+        );
+      }
+      return AuthResult(status: AuthStatus.success, usuario: usuario);
+    } on AuthException catch (e) {
+      final msg = _mensagemAuth(e);
+      if (msg.toLowerCase().contains('already') || msg.toLowerCase().contains('registered')) {
+        return const AuthResult(status: AuthStatus.error, message: 'Este e-mail já está cadastrado.');
+      }
+      return AuthResult(status: AuthStatus.error, message: msg);
+    } catch (e) {
+      debugPrint('criarConta: $e');
+      return const AuthResult(status: AuthStatus.error, message: 'Erro ao criar conta. Tente novamente.');
     }
   }
 
   Future<Usuario?> recuperarSessao() async {
-    final session = supabase.auth.currentSession;
-    if (session == null) return null;
-    return await _buscarPerfil(session.user.id);
+    final user = supabase.auth.currentUser;
+    if (user == null) return null;
+    return ensurePerfilUsuario(user);
+  }
+
+  /// Garante linha em public.usuarios com role segura (sempre aluno, exceto allowlist).
+  Future<Usuario?> ensurePerfilUsuario(User user, {String? nome}) async {
+    final uid = user.id;
+    var perfil = await _buscarPerfil(uid);
+    if (perfil != null) {
+      return _corrigirRoleAdminIndevido(perfil);
+    }
+
+    for (var i = 0; i < 6; i++) {
+      await Future.delayed(Duration(milliseconds: 250 + i * 150));
+      perfil = await _buscarPerfil(uid);
+      if (perfil != null) return _corrigirRoleAdminIndevido(perfil);
+    }
+
+    final email = user.email?.trim() ?? '';
+    if (email.isEmpty) return null;
+
+    final role = roleForEmail(email);
+    final nomePerfil = nome ??
+        (user.userMetadata?['full_name'] as String?) ??
+        (user.userMetadata?['name'] as String?) ??
+        email.split('@').first;
+
+    try {
+      await supabase.from('usuarios').insert({
+        'id': uid,
+        'nome': nomePerfil,
+        'email': email,
+        'role': role,
+        if (user.userMetadata?['avatar_url'] != null)
+          'foto_url': user.userMetadata!['avatar_url'],
+      });
+    } on PostgrestException catch (e) {
+      debugPrint('ensurePerfil insert: ${e.message}');
+    } catch (e) {
+      debugPrint('ensurePerfil insert: $e');
+    }
+
+    perfil = await _buscarPerfil(uid);
+    if (perfil != null) return _corrigirRoleAdminIndevido(perfil);
+    return null;
+  }
+
+  Future<Usuario?> _corrigirRoleAdminIndevido(Usuario u) async {
+    if (u.isAdmin && roleForEmail(u.email) != 'admin') {
+      debugPrint('Corrigindo role admin indevido para ${u.email}');
+      try {
+        await supabase.from('usuarios').update({'role': 'aluno'}).eq('id', u.id);
+        return _buscarPerfil(u.id);
+      } catch (e) {
+        debugPrint('Falha ao corrigir role: $e');
+      }
+    }
+    return u;
   }
 
   Future<Usuario?> _buscarPerfil(String uid) async {
     try {
-      final data = await supabase
-          .from('usuarios')
-          .select()
-          .eq('id', uid)
-          .maybeSingle();
+      final data = await supabase.from('usuarios').select().eq('id', uid).maybeSingle();
       if (data == null) return null;
       return Usuario.fromMap({...data, 'id': uid});
-    } catch (_) {
+    } catch (e) {
+      debugPrint('_buscarPerfil: $e');
       return null;
     }
+  }
+
+  String _mensagemAuth(AuthException e) {
+    final msg = e.message.toLowerCase();
+    if (msg.contains('invalid login') || msg.contains('invalid credentials')) {
+      return 'Email ou senha incorretos.';
+    }
+    if (msg.contains('email not confirmed')) {
+      return 'Confirme seu e-mail antes de entrar.';
+    }
+    return e.message;
   }
 
   Future<void> atualizarPerfil(String uid, {String? nome, String? email}) async {
