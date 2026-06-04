@@ -31,21 +31,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     final isAdmin = context.watch<AuthProvider>().isAdmin;
 
-    final adminTabs = [
-      DashboardScreen(onValidarPendentes: _abrirAlunosPendentes),
-      AlunosScreen(key: _alunosKey),
-      const FinanceiroScreen(),
-      const LojaScreen(),
-      const PerfilScreen(),
-    ];
-
-    final alunoTabs = [
-      const DashboardScreen(),
-      const LojaScreen(),
-      const PerfilScreen(),
-    ];
-
-    final tabs = isAdmin ? adminTabs : alunoTabs;
+    final lojaIndex = isAdmin ? 3 : 1;
 
     final adminNavItems = [
       const BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), activeIcon: Icon(Icons.dashboard), label: 'Início'),
@@ -69,20 +55,46 @@ class _MainScreenState extends State<MainScreen> {
           children: [
             const BannerAguardandoValidacao(),
             Expanded(
-              child: IndexedStack(
-                index: _tabIndex.clamp(0, tabs.length - 1),
-                children: tabs,
-              ),
+              child: _corpoAba(isAdmin, lojaIndex),
             ),
           ],
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _tabIndex.clamp(0, tabs.length - 1),
+        currentIndex: _tabIndex.clamp(0, isAdmin ? 4 : 2),
         onTap: (i) => setState(() => _tabIndex = i),
         items: isAdmin ? adminNavItems : alunoNavItems,
         selectedItemColor: verdeEscuro,
       ),
     );
+  }
+
+  /// Monta só a aba ativa (evita carregar Loja/Dashboard/Alunos ao mesmo tempo).
+  Widget _corpoAba(bool isAdmin, int lojaIndex) {
+    final i = _tabIndex.clamp(0, isAdmin ? 4 : 2);
+    if (isAdmin) {
+      switch (i) {
+        case 0:
+          return DashboardScreen(onValidarPendentes: _abrirAlunosPendentes);
+        case 1:
+          return AlunosScreen(key: _alunosKey);
+        case 2:
+          return const FinanceiroScreen();
+        case 3:
+          return LojaScreen(tabAtiva: i == lojaIndex);
+        case 4:
+          return const PerfilScreen();
+      }
+    } else {
+      switch (i) {
+        case 0:
+          return const DashboardScreen();
+        case 1:
+          return LojaScreen(tabAtiva: i == lojaIndex);
+        case 2:
+          return const PerfilScreen();
+      }
+    }
+    return const SizedBox.shrink();
   }
 }

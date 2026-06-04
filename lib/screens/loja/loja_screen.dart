@@ -12,13 +12,16 @@ import '../../core/theme.dart';
 import '../../models/pedido.dart';
 import '../../models/produto.dart';
 import '../../core/storage_service.dart';
+import '../../core/supabase_errors.dart';
 import '../../repositories/pedido_repository.dart';
 import '../../repositories/produto_repository.dart';
 import 'pedidos_admin_screen.dart';
 import 'meus_pedidos_screen.dart';
 
 class LojaScreen extends StatefulWidget {
-  const LojaScreen({super.key});
+  /// Só carrega produtos quando a aba Loja está visível (mais rápido no app).
+  final bool tabAtiva;
+  const LojaScreen({super.key, this.tabAtiva = false});
   @override
   State<LojaScreen> createState() => _LojaScreenState();
 }
@@ -26,7 +29,9 @@ class LojaScreen extends StatefulWidget {
 class _LojaScreenState extends State<LojaScreen> {
   final _repo = ProdutoRepository();
   List<Produto> _produtos = [];
-  bool _loading = true;
+  bool _loading = false;
+  bool _carregou = false;
+  String? _erroLoad;
   String _filtroCategoria = 'todos';
   static const _categorias = ['kimono', 'faixa', 'camisa', 'short', 'outro'];
   static const _catLabel = {'kimono':'Kimono','faixa':'Faixa','camisa':'Camisa','short':'Short','outro':'Outro'};
@@ -38,15 +43,34 @@ class _LojaScreenState extends State<LojaScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.tabAtiva) _iniciarCarga();
+  }
+
+  @override
+  void didUpdateWidget(LojaScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.tabAtiva && !_carregou) _iniciarCarga();
+  }
+
+  void _iniciarCarga() {
+    _carregou = true;
     _load();
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
-    final isAdmin = context.read<AuthProvider>().isAdmin;
-    final lista = await _repo.listar(ativo: isAdmin ? null : true);
-    if (mounted) {
-      setState(() { _produtos = lista; _loading = false; });
+    if (!mounted) return;
+    setState(() {
+      _loading = true;
+      _erroLoad = null;
+    });
+    try {
+      final isAdmin = context.read<AuthProvider>().isAdmin;
+      final lista = await _repo.listar(ativo: isAdmin ? null : true);
+      if (!mounted) return;
+      setState(() {
+        _produtos = lista;
+        _loading = false;
+      });
       if (isAdmin) {
         final fotosQuebradas = lista.where((p) {
           final u = p.fotoUrl;
@@ -56,13 +80,21 @@ class _LojaScreenState extends State<LojaScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                '$fotosQuebradas produto(s) com foto antiga (path local). Edite e salve de novo para enviar ao Supabase.',
+                '$fotosQuebradas produto(s) com foto antiga. Edite e salve de novo para enviar ao Supabase.',
               ),
-              duration: const Duration(seconds: 6),
+              duration: const Duration(seconds: 5),
               backgroundColor: Colors.orange.shade800,
             ),
           );
         }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _produtos = [];
+          _loading = false;
+          _erroLoad = mensagemErroSupabase(e, recurso: 'os produtos');
+        });
       }
     }
   }
@@ -120,8 +152,29 @@ class _LojaScreenState extends State<LojaScreen> {
           ]),
         ),
         Expanded(
-          child: _loading
+          child: !_carregou
+              ? Center(
+                  child: Text(
+                    'Carregando loja…',
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                )
+              : _loading
               ? const Center(child: CircularProgressIndicator(color: verdeEscuro))
+              : _erroLoad != null
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(_erroLoad!, textAlign: TextAlign.center),
+                            const SizedBox(height: 12),
+                            ElevatedButton(onPressed: _load, child: const Text('Tentar novamente')),
+                          ],
+                        ),
+                      ),
+                    )
               : _filtrados.isEmpty
                   ? Center(child: Text('Nenhum produto encontrado.', style: TextStyle(color: Colors.grey.shade500)))
                   : GridView.builder(
@@ -189,7 +242,19 @@ class _LojaScreenState extends State<LojaScreen> {
       observacoes: obs,
     );
 
-    await PedidoRepository().criar(pedido);
+    try {
+      await PedidoRepository().criar(pedido);
+    } catch (e) {
+      if (ctx.mounted) {
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          SnackBar(
+            content: Text(mensagemErroSupabase(e, recurso: 'o pedido')),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
 
     // Notifica professor via WhatsApp
     const professorTel = '5521975396996';

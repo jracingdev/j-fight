@@ -51,9 +51,9 @@ create policy "Admin gerencia pedidos" on public.pedidos
   for all using (public.is_admin());
 
 create policy "Aluno vê próprios pedidos" on public.pedidos
-  for select using (aluno_email = auth.email());
+  for select using (lower(trim(aluno_email)) = lower(trim(auth.email())));
 
 create policy "Aluno cria próprio pedido" on public.pedidos
-  for insert with check (aluno_email = auth.email());
+  for insert with check (lower(trim(aluno_email)) = lower(trim(auth.email())));
 
 select 'Tabela pedidos criada!' as status;

@@ -4,7 +4,9 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/mp_service.dart';
 import '../../core/theme.dart';
 import '../../models/pedido.dart';
+import '../../core/supabase_errors.dart';
 import '../../repositories/pedido_repository.dart';
+import '../../widgets/pedidos_erro_view.dart';
 
 class PedidosAdminScreen extends StatefulWidget {
   const PedidosAdminScreen({super.key});
@@ -17,14 +19,29 @@ class _PedidosAdminScreenState extends State<PedidosAdminScreen> {
   List<Pedido> _todos = [];
   String _filtroStatus = 'todos';
   bool _loading = true;
+  String? _erro;
 
   @override
   void initState() { super.initState(); _load(); }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
-    final data = await _repo.listar();
-    if (mounted) setState(() { _todos = data; _loading = false; });
+    if (!mounted) return;
+    setState(() {
+      _loading = true;
+      _erro = null;
+    });
+    try {
+      final data = await _repo.listar();
+      if (mounted) setState(() { _todos = data; _loading = false; });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _todos = [];
+          _loading = false;
+          _erro = mensagemErroSupabase(e, recurso: 'os pedidos');
+        });
+      }
+    }
   }
 
   List<Pedido> get _filtrados =>
@@ -56,8 +73,13 @@ class _PedidosAdminScreenState extends State<PedidosAdminScreen> {
         Expanded(
           child: _loading
               ? const Center(child: CircularProgressIndicator(color: verdeEscuro))
-              : _filtrados.isEmpty
-                  ? const Center(child: Text('Nenhum pedido encontrado.'))
+              : _erro != null
+                  ? PedidosErroView(mensagem: _erro!, onRetry: _load)
+                  : _filtrados.isEmpty
+                  ? const PedidosListaVazia(
+                      titulo: 'Nenhum pedido na loja',
+                      subtitulo: 'Quando alunos solicitarem produtos, eles aparecerão aqui.',
+                    )
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.builder(

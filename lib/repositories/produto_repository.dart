@@ -1,14 +1,24 @@
-﻿import '../core/supabase_service.dart';
+﻿import 'package:flutter/foundation.dart';
+
+import '../core/supabase_errors.dart';
+import '../core/supabase_service.dart';
 import '../models/produto.dart';
 
 class ProdutoRepository {
   Future<List<Produto>> listar({bool? ativo}) async {
-    if (ativo != null) {
-      final data = await supabase.from('produtos').select().eq('ativo', ativo).order('nome');
+    try {
+      if (ativo != null) {
+        final data = await comTimeout(
+          supabase.from('produtos').select().eq('ativo', ativo).order('nome'),
+        );
+        return (data as List).map((m) => Produto.fromMap(m)).toList();
+      }
+      final data = await comTimeout(supabase.from('produtos').select().order('nome'));
       return (data as List).map((m) => Produto.fromMap(m)).toList();
+    } catch (e, st) {
+      debugPrint('ProdutoRepository.listar: $e\n$st');
+      rethrow;
     }
-    final data = await supabase.from('produtos').select().order('nome');
-    return (data as List).map((m) => Produto.fromMap(m)).toList();
   }
 
   Future<Produto> criar(Produto p) async {

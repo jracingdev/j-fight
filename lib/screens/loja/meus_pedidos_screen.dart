@@ -5,7 +5,9 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/theme.dart';
 import '../../models/pedido.dart';
+import '../../core/supabase_errors.dart';
 import '../../repositories/pedido_repository.dart';
+import '../../widgets/pedidos_erro_view.dart';
 
 class MeusPedidosScreen extends StatefulWidget {
   const MeusPedidosScreen({super.key});
@@ -17,16 +19,41 @@ class _MeusPedidosScreenState extends State<MeusPedidosScreen> {
   final _repo = PedidoRepository();
   List<Pedido> _pedidos = [];
   bool _loading = true;
+  String? _erro;
 
   @override
   void initState() { super.initState(); _load(); }
 
   Future<void> _load() async {
-    final email = context.read<AuthProvider>().usuario?.email ?? '';
-    if (email.isEmpty) return;
-    setState(() => _loading = true);
-    final data = await _repo.meusPedidos(email);
-    if (mounted) setState(() { _pedidos = data; _loading = false; });
+    if (!mounted) return;
+    setState(() {
+      _loading = true;
+      _erro = null;
+    });
+    try {
+      final auth = context.read<AuthProvider>();
+      final email = (auth.usuario?.email ?? auth.alunoVinculado?.email ?? '').trim();
+      if (email.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _loading = false;
+            _erro = 'Não foi possível identificar seu e-mail. Saia e entre novamente.';
+            _pedidos = [];
+          });
+        }
+        return;
+      }
+      final data = await _repo.meusPedidos(email);
+      if (mounted) setState(() { _pedidos = data; _loading = false; });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _pedidos = [];
+          _loading = false;
+          _erro = mensagemErroSupabase(e, recurso: 'seus pedidos');
+        });
+      }
+    }
   }
 
   @override
@@ -37,12 +64,13 @@ class _MeusPedidosScreenState extends State<MeusPedidosScreen> {
       ]),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: verdeEscuro))
-          : _pedidos.isEmpty
-              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.shopping_bag_outlined, size: 64, color: Colors.grey),
-                  const SizedBox(height: 12),
-                  Text('Nenhum pedido ainda.', style: TextStyle(color: Colors.grey.shade500, fontSize: 16)),
-                ]))
+          : _erro != null
+              ? PedidosErroView(mensagem: _erro!, onRetry: _load)
+              : _pedidos.isEmpty
+              ? const PedidosListaVazia(
+                  titulo: 'Nenhum pedido ainda',
+                  subtitulo: 'Solicite um produto na Loja e acompanhe o status aqui.',
+                )
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView.builder(
