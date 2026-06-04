@@ -134,4 +134,4 @@ flutter build web --release --base-href "/smbjj/"
 
 ---
 
-*Última atualização desta auditoria: release 1.2.4*
+*Última atualização desta auditoria: release 1.3.0 — executar `supabase_financeiro.sql` no Supabase*
