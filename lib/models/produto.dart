@@ -35,11 +35,30 @@
     }
   }
 
-  String? get youtubeThumbnail {
-    if (youtubeUrl == null || youtubeUrl!.isEmpty) return null;
-    final match = RegExp(r'(?:youtube\.com/watch\?v=|youtu\.be/)([a-zA-Z0-9_-]{11})').firstMatch(youtubeUrl!);
-    return match != null ? 'https://img.youtube.com/vi/${match.group(1)}/mqdefault.jpg' : null;
+  /// Extrai ID de vídeo de URLs YouTube (watch, youtu.be, embed, shorts, v=).
+  static String? youtubeVideoIdFromUrl(String? url) {
+    if (url == null || url.trim().isEmpty) return null;
+    final u = url.trim();
+    final patterns = [
+      RegExp(r'(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/embed/|youtube\.com/shorts/|youtube\.com/v/)([a-zA-Z0-9_-]{11})'),
+      RegExp(r'[?&]v=([a-zA-Z0-9_-]{11})'),
+    ];
+    for (final p in patterns) {
+      final m = p.firstMatch(u);
+      if (m != null) return m.group(1);
+    }
+    return null;
   }
+
+  String? get youtubeVideoId =>
+      youtubeVideoIdFromUrl(youtubeUrl) ?? youtubeVideoIdFromUrl(fotoUrl);
+
+  String? get youtubeThumbnail {
+    final id = youtubeVideoId;
+    return id != null ? 'https://img.youtube.com/vi/$id/mqdefault.jpg' : null;
+  }
+
+  bool get temVideoYouTube => youtubeVideoId != null;
 
   int get estoqueTotal => 0; // calculado via variantes
 

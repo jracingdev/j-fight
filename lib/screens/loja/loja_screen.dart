@@ -2,12 +2,15 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../utils/image_utils.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/auth/auth_provider.dart';
+import '../../core/constants.dart';
+import '../../core/mp_service.dart';
 import '../../core/theme.dart';
 import '../../models/pedido.dart';
 import '../../models/produto.dart';
@@ -208,12 +211,10 @@ class _LojaScreenState extends State<LojaScreen> {
   }
 
   Future<void> _criarPedido(BuildContext ctx, Produto p) async {
-    final user = ctx.read<AuthProvider>().usuario;
+    final auth = ctx.read<AuthProvider>();
+    final user = auth.usuario;
     if (user == null) return;
 
-    // Selecionar variante se houver
-    String? cor, tamanho;
-    // Sheet de seleção de variante + quantidade
     final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: ctx, isScrollControlled: true, useSafeArea: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
@@ -221,29 +222,38 @@ class _LojaScreenState extends State<LojaScreen> {
     );
     if (result == null) return;
 
-    cor = result['cor'];
-    tamanho = result['tamanho'];
+    final cor = result['cor'] as String?;
+    final tamanho = result['tamanho'] as String?;
     final qtd = result['quantidade'] as int;
     final obs = result['observacoes'] as String?;
+    final forma = result['forma_pagamento'] as String? ?? 'pix';
+    final total = p.preco * qtd;
+
+    final aluno = auth.alunoVinculado;
+    final telefone = aluno?.telefone?.trim();
 
     final pedido = Pedido(
       id: '',
+      alunoId: aluno?.id,
       alunoNome: user.nome,
       alunoEmail: user.email,
-      alunoTelefone: result['telefone'],
+      alunoTelefone: telefone?.isNotEmpty == true ? telefone : null,
       produtoId: p.id,
       produtoNome: p.nome,
       varianteCor: cor,
       varianteTamanho: tamanho,
       quantidade: qtd,
       valorUnitario: p.preco,
-      valorTotal: p.preco * qtd,
+      valorTotal: total,
       status: 'pendente',
+      formaPagamento: forma,
       observacoes: obs,
     );
 
+    final repo = PedidoRepository();
+    Pedido criado;
     try {
-      await PedidoRepository().criar(pedido);
+      criado = await repo.criar(pedido);
     } catch (e) {
       if (ctx.mounted) {
         ScaffoldMessenger.of(ctx).showSnackBar(
@@ -256,28 +266,77 @@ class _LojaScreenState extends State<LojaScreen> {
       return;
     }
 
-    // Notifica professor via WhatsApp
-    const professorTel = '5521975396996';
-    final msg = '🛒 Novo pedido na Loja SM BJJ!\n\n'
-        'Aluno: *${user.nome}*\n'
-        'Produto: *${p.nome}*\n'
-        '${cor != null ? 'Cor: $cor\n' : ''}'
-        '${tamanho != null ? 'Tamanho: $tamanho\n' : ''}'
-        'Quantidade: $qtd\n'
-        'Total: R\$ ${(p.preco * qtd).toStringAsFixed(2)}\n'
-        '${obs != null ? 'Obs: $obs\n' : ''}\n'
-        'Verifique o app para confirmar! 🥋';
-    final uri = Uri.parse('https://wa.me/$professorTel?text=${Uri.encodeComponent(msg)}');
-    if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ctx.mounted) return;
+
+    if (forma == 'mercadopago') {
+      final pref = await MercadoPagoService.instance.criarCobranca(
+        titulo: 'Pedido ${p.nome} - SM BJJ',
+        valor: total,
+        emailPagador: user.email,
+        descricao: '${p.nome}${cor != null || tamanho != null ? ' (${[if (cor != null) cor, if (tamanho != null) tamanho].join(' / ')})' : ''} — Qtd: $qtd',
+      );
+      if (!ctx.mounted) return;
+      if (pref == null) {
+        ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
+          content: Text('Mercado Pago não configurado. Peça ao professor ou pague via PIX em Meus Pedidos.'),
+          backgroundColor: Colors.orange,
+        ));
+      } else {
+        await repo.atualizarLinkPagamento(criado.id, pref.link);
+        if (!ctx.mounted) return;
+        final linkUri = Uri.parse(pref.link);
+        if (await canLaunchUrl(linkUri)) {
+          await launchUrl(
+            linkUri,
+            mode: kIsWeb ? LaunchMode.externalApplication : LaunchMode.inAppWebView,
+          );
+        }
+      }
+    } else if (forma == 'pix') {
+      if (!ctx.mounted) return;
+      await _mostrarDialogPix(ctx, valor: total, produtoNome: p.nome);
+    }
 
     if (ctx.mounted) {
       ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
-        content: Text('Pedido enviado! Acompanhe em "Meus Pedidos".'),
+        content: Text('Pedido registrado! Acompanhe em "Meus Pedidos".'),
         backgroundColor: verdeEscuro,
       ));
-      // Navega para Meus Pedidos
       Navigator.push(ctx, MaterialPageRoute(builder: (_) => const MeusPedidosScreen()));
     }
+  }
+
+  Future<void> _mostrarDialogPix(BuildContext ctx, {required double valor, required String produtoNome}) async {
+    await showDialog<void>(
+      context: ctx,
+      builder: (dctx) => AlertDialog(
+        title: const Text('Pagamento PIX'),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(produtoNome, style: const TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          Text('Valor: R\$ ${valor.toStringAsFixed(2)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: verdeEscuro)),
+          const SizedBox(height: 12),
+          Text('Favorecido: $pixNome', style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
+          const SizedBox(height: 8),
+          SelectableText(pixKey, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+          const SizedBox(height: 12),
+          Text('Copie a chave PIX, pague o valor acima e envie o comprovante ao professor pelo WhatsApp. O pedido será confirmado após a validação.',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dctx), child: const Text('Fechar')),
+          FilledButton.icon(
+            onPressed: () {
+              Clipboard.setData(const ClipboardData(text: pixKey));
+              ScaffoldMessenger.of(dctx).showSnackBar(const SnackBar(content: Text('Chave PIX copiada!')));
+            },
+            icon: const Icon(Icons.copy, size: 18),
+            label: const Text('Copiar chave PIX'),
+            style: FilledButton.styleFrom(backgroundColor: verdeEscuro),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -314,11 +373,20 @@ class _SolicitarSheet extends StatefulWidget {
 class _SolicitarSheetState extends State<_SolicitarSheet> {
   String? _cor, _tamanho;
   int _qtd = 1;
+  String _formaPagamento = 'pix';
+  bool _mpDisponivel = false;
   final _obsCtrl = TextEditingController();
-  final _telCtrl = TextEditingController();
 
   @override
-  void dispose() { _obsCtrl.dispose(); _telCtrl.dispose(); super.dispose(); }
+  void initState() {
+    super.initState();
+    MercadoPagoService.instance.getAccessToken().then((t) {
+      if (mounted) setState(() => _mpDisponivel = t != null && t.isNotEmpty);
+    });
+  }
+
+  @override
+  void dispose() { _obsCtrl.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
@@ -329,13 +397,15 @@ class _SolicitarSheetState extends State<_SolicitarSheet> {
       child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Text('Solicitar: ${p.nome}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
         Text('R\$ ${p.preco.toStringAsFixed(2)} / unidade', style: TextStyle(color: Colors.grey.shade600)),
-        const SizedBox(height: 16),
-
-        // Telefone de contato
-        TextField(controller: _telCtrl,
-          decoration: const InputDecoration(labelText: 'Seu telefone (para contato)', prefixIcon: Icon(Icons.phone_outlined), isDense: true),
-          keyboardType: TextInputType.phone),
         const SizedBox(height: 12),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: SizedBox(
+            height: 140,
+            child: _ProdutoImagem(fotoUrl: p.fotoUrl, youtubeThumb: p.youtubeThumbnail, priorizarVideo: p.temVideoYouTube),
+          ),
+        ),
+        const SizedBox(height: 16),
 
         // Cor
         const Text('Cor (opcional):', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
@@ -377,14 +447,41 @@ class _SolicitarSheetState extends State<_SolicitarSheet> {
           maxLines: 2),
         const SizedBox(height: 16),
 
+        const Text('Forma de pagamento', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+        const SizedBox(height: 8),
+        RadioListTile<String>(
+          value: 'pix',
+          groupValue: _formaPagamento,
+          onChanged: (v) => setState(() => _formaPagamento = v!),
+          title: const Text('PIX à vista'),
+          subtitle: Text('Chave: $pixKey', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+          secondary: const Icon(Icons.pix, color: verdeEscuro),
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+        ),
+        RadioListTile<String>(
+          value: 'mercadopago',
+          groupValue: _formaPagamento,
+          onChanged: _mpDisponivel ? (v) => setState(() => _formaPagamento = v!) : null,
+          title: const Text('Mercado Pago'),
+          subtitle: Text(
+            _mpDisponivel ? 'PIX, cartão e boleto pelo link' : 'Indisponível — professor deve configurar no app',
+            style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+          ),
+          secondary: Icon(Icons.payment, color: _mpDisponivel ? Colors.blue : Colors.grey),
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+        ),
+        const SizedBox(height: 12),
+
         ElevatedButton.icon(
           onPressed: () => Navigator.pop(context, {
             'cor': _cor, 'tamanho': _tamanho, 'quantidade': _qtd,
             'observacoes': _obsCtrl.text.trim().isEmpty ? null : _obsCtrl.text.trim(),
-            'telefone': _telCtrl.text.trim().isEmpty ? null : _telCtrl.text.trim(),
+            'forma_pagamento': _formaPagamento,
           }),
-          icon: const Icon(Icons.message),
-          label: Text('Enviar Pedido — R\$ ${(p.preco * _qtd).toStringAsFixed(2)}'),
+          icon: const Icon(Icons.shopping_cart_checkout),
+          label: Text('Confirmar pedido — R\$ ${(p.preco * _qtd).toStringAsFixed(2)}'),
           style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade600),
         ),
       ])),
@@ -409,7 +506,11 @@ class _ProdutoCard extends StatelessWidget {
       child: Opacity(
         opacity: produto.ativo ? 1.0 : 0.5,
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Expanded(child: _ProdutoImagem(fotoUrl: produto.fotoUrl, youtubeThumb: produto.youtubeThumbnail)),
+          Expanded(child: _ProdutoImagem(
+            fotoUrl: produto.fotoUrl,
+            youtubeThumb: produto.youtubeThumbnail,
+            priorizarVideo: produto.temVideoYouTube,
+          )),
           Padding(padding: const EdgeInsets.all(10), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(produto.nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), maxLines: 2, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 4),
@@ -427,8 +528,8 @@ class _ProdutoCard extends StatelessWidget {
               const SizedBox(height: 6),
               SizedBox(width: double.infinity, child: ElevatedButton.icon(
                 onPressed: onSolicitar,
-                icon: const Icon(Icons.message, size: 14),
-                label: const Text('Solicitar', style: TextStyle(fontSize: 12)),
+                icon: const Icon(Icons.shopping_bag_outlined, size: 14),
+                label: const Text('Comprar', style: TextStyle(fontSize: 12)),
                 style: ElevatedButton.styleFrom(
                   visualDensity: VisualDensity.compact,
                   backgroundColor: Colors.green.shade600,
@@ -454,12 +555,21 @@ class _PlaceholderImg extends StatelessWidget {
 class _ProdutoImagem extends StatelessWidget {
   final String? fotoUrl;
   final String? youtubeThumb;
-  const _ProdutoImagem({this.fotoUrl, this.youtubeThumb});
+  final bool priorizarVideo;
+  const _ProdutoImagem({this.fotoUrl, this.youtubeThumb, this.priorizarVideo = false});
 
   @override
   Widget build(BuildContext context) {
-    // Prioridade: foto local/URL > thumbnail YouTube > placeholder
+    if (priorizarVideo && youtubeThumb != null) {
+      return _youtubeThumbWidget(youtubeThumb!);
+    }
+
     final path = fotoUrl?.isNotEmpty == true ? fotoUrl : null;
+    // URL de foto que na verdade é link do YouTube
+    if (path != null && Produto.youtubeVideoIdFromUrl(path) != null) {
+      final thumb = 'https://img.youtube.com/vi/${Produto.youtubeVideoIdFromUrl(path)}/mqdefault.jpg';
+      return _youtubeThumbWidget(thumb);
+    }
 
     if (path != null) {
       final remote = path.startsWith('http://') || path.startsWith('https://');
@@ -476,14 +586,14 @@ class _ProdutoImagem extends StatelessWidget {
     return _fallbackYoutube(youtubeThumb);
   }
 
+  Widget _youtubeThumbWidget(String thumb) => Stack(fit: StackFit.expand, children: [
+    Image.network(thumb, fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const _PlaceholderImg()),
+    const Center(child: Icon(Icons.play_circle_filled, color: Colors.white, size: 40)),
+  ]);
+
   Widget _fallbackYoutube(String? thumb) {
-    if (thumb != null) {
-      return Stack(fit: StackFit.expand, children: [
-        Image.network(thumb, fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => const _PlaceholderImg()),
-        const Center(child: Icon(Icons.play_circle_filled, color: Colors.white, size: 40)),
-      ]);
-    }
+    if (thumb != null) return _youtubeThumbWidget(thumb);
     return const _PlaceholderImg();
   }
 }

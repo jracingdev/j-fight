@@ -118,7 +118,17 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<AuthResult> loginGoogle() async {
-    return AuthService.instance.loginComGoogle();
+    final result = await AuthService.instance.loginComGoogle();
+    _mensagemAuth = result.message;
+    if (result.usuario != null) {
+      _usuario = result.usuario;
+      if (!isAdmin) {
+        await _atualizarVinculoAluno();
+      } else {
+        notifyListeners();
+      }
+    }
+    return result;
   }
 
   Future<AuthResult> recuperarSenha(String email) async {
@@ -126,6 +136,42 @@ class AuthProvider extends ChangeNotifier {
     _mensagemAuth = result.message;
     notifyListeners();
     return result;
+  }
+
+  /// Valida a senha atual, confirma biometria e grava credenciais para login rápido.
+  Future<AuthResult> configurarBiometria(String senha) async {
+    final email = _usuario?.email.trim();
+    if (email == null || email.isEmpty) {
+      return const AuthResult(
+        status: AuthStatus.error,
+        message: 'E-mail do usuário não encontrado.',
+      );
+    }
+    if (!await BiometricAuthService.instance.biometriaDisponivel) {
+      return const AuthResult(
+        status: AuthStatus.error,
+        message: 'Este aparelho não suporta biometria ou PIN de bloqueio.',
+      );
+    }
+    final bioOk = await BiometricAuthService.instance.autenticarBiometria();
+    if (!bioOk) {
+      return const AuthResult(
+        status: AuthStatus.error,
+        message: 'Biometria cancelada ou não reconhecida.',
+      );
+    }
+    final check = await AuthService.instance.loginComEmail(email, senha);
+    if (!check.ok) {
+      return AuthResult(
+        status: AuthStatus.error,
+        message: check.message ?? 'Senha incorreta.',
+      );
+    }
+    await BiometricAuthService.instance.habilitar(email: email, senha: senha);
+    return const AuthResult(
+      status: AuthStatus.success,
+      message: 'Biometria ativada! Use na tela de entrar.',
+    );
   }
 
   Future<AuthResult> loginBiometrico() async {

@@ -2,6 +2,7 @@
 import 'package:provider/provider.dart';
 import '../../utils/image_utils.dart';
 import '../../utils/aluno_foto_util.dart';
+import '../../core/app_platform.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/auth/biometric_auth_service.dart';
 import '../../core/backup/drive_backup.dart';
@@ -449,20 +450,63 @@ class _BiometricSettingsCardState extends State<_BiometricSettingsCard> {
 
   Future<void> _load() async {
     final bio = BiometricAuthService.instance;
+    final suporta = await bio.dispositivoSuporta;
     final disp = await bio.biometriaDisponivel;
     final hab = await bio.habilitado;
     if (mounted) {
       setState(() {
-        _disponivel = disp;
+        _disponivel = suporta || disp;
         _habilitado = hab;
         _loading = false;
       });
     }
   }
 
+  Future<void> _ativarComSenha() async {
+    final senhaCtrl = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Ativar biometria'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Confirme sua senha de login. Em seguida o app pedirá digital ou rosto.',
+              style: TextStyle(fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: senhaCtrl,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Senha', isDense: true),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Continuar')),
+        ],
+      ),
+    );
+    final senha = senhaCtrl.text;
+    senhaCtrl.dispose();
+    if (ok != true || !mounted) return;
+
+    final result = await context.read<AuthProvider>().configurarBiometria(senha);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(result.message ?? ''),
+        backgroundColor: result.ok ? verdeEscuro : Colors.red,
+      ),
+    );
+    if (result.ok) await _load();
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (_loading || !_disponivel) return const SizedBox.shrink();
+    if (!isNativeApp || _loading || !_disponivel) return const SizedBox.shrink();
     return Card(
       child: SwitchListTile(
         secondary: const Icon(Icons.fingerprint, color: verdeEscuro),
@@ -470,7 +514,7 @@ class _BiometricSettingsCardState extends State<_BiometricSettingsCard> {
         subtitle: Text(
           _habilitado
               ? 'Ativo — use na tela de entrar'
-              : 'Saia, entre com e-mail/senha e aceite "Ativar"',
+              : 'Ative com sua senha (não funciona só com login Google)',
           style: const TextStyle(fontSize: 12),
         ),
         value: _habilitado,
@@ -481,14 +525,7 @@ class _BiometricSettingsCardState extends State<_BiometricSettingsCard> {
             await _load();
             return;
           }
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Para ativar: saia da conta, entre com e-mail e senha e confirme no aviso.'),
-                backgroundColor: verdeEscuro,
-              ),
-            );
-          }
+          await _ativarComSenha();
         },
       ),
     );

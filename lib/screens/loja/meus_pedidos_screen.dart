@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/auth/auth_provider.dart';
+import '../../core/constants.dart';
 import '../../core/theme.dart';
 import '../../models/pedido.dart';
 import '../../core/supabase_errors.dart';
@@ -224,7 +225,35 @@ class _MeuPedidoCardState extends State<_MeuPedidoCard> {
               const SizedBox(height: 10),
             ],
 
-            // Link de pagamento
+            // PIX à vista
+            if (!p.pago && p.formaPagamento == 'pix') ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.green.shade200),
+                ),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  Text('PIX — R\$ ${p.valorTotal.toStringAsFixed(2)}',
+                      style: const TextStyle(fontWeight: FontWeight.w800, color: verdeEscuro)),
+                  const SizedBox(height: 4),
+                  Text('$pixNome · $pixKey', style: const TextStyle(fontSize: 12)),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Clipboard.setData(const ClipboardData(text: pixKey));
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Chave PIX copiada!')));
+                    },
+                    icon: const Icon(Icons.copy, size: 16),
+                    label: const Text('Copiar chave PIX'),
+                  ),
+                ]),
+              ),
+              const SizedBox(height: 8),
+            ],
+
+            // Link de pagamento Mercado Pago
             if (!p.pago && p.linkPagamento != null) ...[
               SizedBox(width: double.infinity, child: ElevatedButton.icon(
                 onPressed: () async {

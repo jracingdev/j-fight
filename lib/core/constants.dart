@@ -2,8 +2,8 @@
 // CT SM BJJ — Constantes do App
 // ============================================================
 
-const String appVersion = '1.3.4';
-const String appBuild = '19';
+const String appVersion = '1.3.7';
+const String appBuild = '22';
 const String appName = 'CT SM BJJ';
 
 // Academia
@@ -18,6 +18,13 @@ const String professorTelefone = '5521975396996'; // WhatsApp (código país + D
 // Pagamento
 const String pixKey = 'sandroiraja@gmail.com';
 const String pixNome = 'Sandro Iraja';
+
+/// Google Sign-In nativo (Android/iOS). Mesmo Client ID do Supabase → Auth → Google.
+/// Build: --dart-define=GOOGLE_WEB_CLIENT_ID=xxxx.apps.googleusercontent.com
+const String googleWebClientIdEnv = String.fromEnvironment(
+  'GOOGLE_WEB_CLIENT_ID',
+  defaultValue: '',
+);
 
 // Desenvolvedor
 const String developerNome = 'JRacing Dev';

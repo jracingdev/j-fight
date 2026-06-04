@@ -187,6 +187,11 @@ class _LoginScreenState extends State<LoginScreen> {
           _erro = result.message;
           _aguardandoGoogle = false;
         });
+      } else if (result.status == AuthStatus.success) {
+        setState(() {
+          _aguardandoGoogle = false;
+          _loading = false;
+        });
       } else if (result.status == AuthStatus.oauthStarted) {
         return;
       } else {
@@ -255,18 +260,79 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _biometriaNaoConfigurada({bool web = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          web
-              ? 'Biometria está disponível no app Android instalado no celular.'
-              : 'Entre com e-mail e senha uma vez e aceite "Ativar" no aviso para usar biometria.',
+  Future<void> _biometriaNaoConfigurada({bool web = false}) async {
+    if (web) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Biometria está disponível no app Android instalado no celular.'),
+          backgroundColor: verdeEscuro,
+          duration: Duration(seconds: 5),
         ),
-        backgroundColor: verdeEscuro,
-        duration: const Duration(seconds: 5),
+      );
+      return;
+    }
+    if (!_biometriaDisponivel) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sensor biométrico ou PIN de bloqueio não disponível neste aparelho.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final email = _emailCtrl.text.trim();
+    final senha = _senhaCtrl.text;
+    if (email.isEmpty || senha.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Preencha e-mail e senha abaixo e toque de novo para ativar a biometria.'),
+          backgroundColor: verdeEscuro,
+          duration: Duration(seconds: 5),
+        ),
+      );
+      return;
+    }
+
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Ativar biometria'),
+        content: const Text(
+          'Vamos validar sua senha e o sensor do aparelho. Na próxima vez você entra só com digital ou rosto.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Ativar')),
+        ],
       ),
     );
+    if (confirmar != true || !mounted) return;
+
+    setState(() => _loading = true);
+    try {
+      final bioOk = await BiometricAuthService.instance.autenticarBiometria();
+      if (!bioOk || !mounted) return;
+      final result = await context.read<AuthProvider>().loginEmail(email, senha);
+      if (!mounted) return;
+      if (!result.ok) {
+        setState(() => _erro = result.message);
+        return;
+      }
+      await BiometricAuthService.instance.habilitar(email: email, senha: senha);
+      await CredentialRememberService.instance.salvar(lembrar: _lembrarSenha, email: email, senha: senha);
+      await _recarregarBiometria();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Biometria ativada! Use o botão acima na próxima vez.'),
+            backgroundColor: verdeEscuro,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   Widget _linkEsqueciSenha() {
@@ -375,7 +441,7 @@ class _LoginScreenState extends State<LoginScreen> {
             label: Text(
               _biometriaHabilitada
                   ? 'Entrar com biometria'
-                  : 'Biometria — ative após 1º login com senha',
+                  : 'Ativar / entrar com biometria',
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 color: _biometriaHabilitada ? verdeEscuro : Colors.grey.shade700,

@@ -4,6 +4,7 @@ import '../app_platform.dart';
 import '../supabase_service.dart';
 import '../../models/usuario.dart';
 import 'auth_result.dart';
+import 'google_native_sign_in.dart';
 import 'oauth_config.dart';
 
 /// Apenas estes e-mails podem ter role admin (case-insensitive).
@@ -49,24 +50,61 @@ class AuthService {
   }
 
   Future<AuthResult> loginComGoogle() async {
+    if (isNativeApp && GoogleNativeSignIn.disponivel) {
+      try {
+        final response = await GoogleNativeSignIn.signIn();
+        if (response == null) {
+          return const AuthResult(
+            status: AuthStatus.error,
+            message: 'Login Google cancelado.',
+          );
+        }
+        final user = response.user;
+        if (user == null) {
+          return const AuthResult(
+            status: AuthStatus.error,
+            message: 'Não foi possível concluir o login Google.',
+          );
+        }
+        final usuario = await ensurePerfilUsuario(user);
+        if (usuario == null) {
+          return const AuthResult(
+            status: AuthStatus.error,
+            message: 'Login ok, mas o perfil não carregou. Tente novamente.',
+          );
+        }
+        return AuthResult(status: AuthStatus.success, usuario: usuario);
+      } on AuthException catch (e) {
+        return AuthResult(status: AuthStatus.error, message: _mensagemAuth(e));
+      } catch (e, st) {
+        debugPrint('loginComGoogle nativo: $e\n$st');
+        // Continua para OAuth web se o nativo falhar
+      }
+    }
+
+    return _loginComGoogleOAuth();
+  }
+
+  /// Fallback: navegador + deep link (requer redirect URLs no Supabase).
+  Future<AuthResult> _loginComGoogleOAuth() async {
     try {
       await supabase.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: OAuthConfig.redirectUrl,
         authScreenLaunchMode: isWebApp
             ? LaunchMode.platformDefault
-            : LaunchMode.inAppWebView,
+            : LaunchMode.externalApplication,
       );
       return AuthResult(
         status: AuthStatus.oauthStarted,
         message: isWebApp
             ? 'Conclua o login no navegador e volte para o site.'
-            : 'Conclua o login na janela do app.',
+            : 'Conclua o login no navegador. Ao terminar, toque em "Abrir no app" ou volte manualmente ao CT SM BJJ.',
       );
     } on AuthException catch (e) {
       return AuthResult(status: AuthStatus.error, message: _mensagemAuth(e));
     } catch (e) {
-      debugPrint('loginComGoogle: $e');
+      debugPrint('loginComGoogle OAuth: $e');
       return const AuthResult(status: AuthStatus.error, message: 'Não foi possível abrir o login Google.');
     }
   }

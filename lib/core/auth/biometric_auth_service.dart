@@ -11,7 +11,11 @@ class BiometricAuthService {
   static final BiometricAuthService instance = BiometricAuthService._();
   BiometricAuthService._();
 
-  final _storage = const FlutterSecureStorage();
+  static const _storage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+  );
+
   final _localAuth = LocalAuthentication();
 
   Future<bool> get dispositivoSuporta async {
@@ -24,16 +28,18 @@ class BiometricAuthService {
     }
   }
 
+  /// Sensor/PIN do aparelho disponível (critério amplo — evita falso negativo em Motorola etc.).
   Future<bool> get biometriaDisponivel async {
     if (kIsWeb) return false;
     try {
       if (!await dispositivoSuporta) return false;
       final canCheck = await _localAuth.canCheckBiometrics;
+      if (canCheck) return true;
       final tipos = await _localAuth.getAvailableBiometrics();
-      return canCheck || tipos.isNotEmpty;
+      return tipos.isNotEmpty || await dispositivoSuporta;
     } catch (e) {
       debugPrint('biometric canCheck: $e');
-      return false;
+      return await dispositivoSuporta;
     }
   }
 
@@ -63,7 +69,9 @@ class BiometricAuthService {
   }
 
   Future<bool> autenticarBiometria() async {
+    if (kIsWeb) return false;
     try {
+      if (!await biometriaDisponivel) return false;
       return await _localAuth.authenticate(
         localizedReason: 'Use sua digital ou rosto para entrar no CT SM BJJ',
         options: const AuthenticationOptions(
