@@ -231,7 +231,8 @@ class _MeuCadastroScreenState extends State<MeuCadastroScreen> {
                     ),
                     const SizedBox(height: 6),
                     const Text(
-                      'Preencha seus dados para o professor validar e definir sua turma. '
+                      'Se entrou com Google, complete telefone, cidade e demais dados abaixo. '
+                      'Se seu e-mail já está na academia, vinculamos automaticamente. '
                       'Faixa e turmas são definidas pelo professor após a validação.',
                       style: TextStyle(fontSize: 13),
                     ),

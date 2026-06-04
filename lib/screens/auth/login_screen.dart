@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/app_platform.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/auth/auth_result.dart';
 import '../../core/auth/biometric_auth_service.dart';
@@ -25,11 +25,34 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _biometriaHabilitada = false;
   bool _tentouBioAuto = false;
   bool _lembrarSenha = false;
+  bool _aguardandoGoogle = false;
+  AuthProvider? _authProv;
 
   @override
   void initState() {
     super.initState();
     _carregarInicio();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final auth = context.read<AuthProvider>();
+    if (_authProv != auth) {
+      _authProv?.removeListener(_onAuthChanged);
+      _authProv = auth;
+      _authProv!.addListener(_onAuthChanged);
+    }
+  }
+
+  void _onAuthChanged() {
+    if (!mounted || _authProv == null) return;
+    if (_aguardandoGoogle && _authProv!.autenticado) {
+      setState(() {
+        _aguardandoGoogle = false;
+        _loading = false;
+      });
+    }
   }
 
   Future<void> _carregarInicio() async {
@@ -57,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       });
     }
-    if (hab && disp && !kIsWeb && mounted && !_tentouBioAuto) {
+    if (hab && disp && isNativeApp && mounted && !_tentouBioAuto) {
       _tentouBioAuto = true;
       WidgetsBinding.instance.addPostFrameCallback((_) => _loginBiometrico());
     }
@@ -70,13 +93,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
+    _authProv?.removeListener(_onAuthChanged);
     _emailCtrl.dispose();
     _senhaCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _oferecerBiometria(String email, String senha) async {
-    if (kIsWeb) return;
+    if (!isNativeApp) return;
     if (!await BiometricAuthService.instance.biometriaDisponivel) return;
     if (await BiometricAuthService.instance.habilitado) return;
     if (!mounted) return;
@@ -126,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _loginBiometrico() async {
-    if (kIsWeb) {
+    if (!isNativeApp) {
       _biometriaNaoConfigurada(web: true);
       return;
     }
@@ -153,15 +177,25 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {
       _loading = true;
       _erro = null;
+      _aguardandoGoogle = true;
     });
     try {
       final result = await context.read<AuthProvider>().loginGoogle();
       if (!mounted) return;
       if (result.status == AuthStatus.error) {
-        setState(() => _erro = result.message);
+        setState(() {
+          _erro = result.message;
+          _aguardandoGoogle = false;
+        });
+      } else if (result.status == AuthStatus.oauthStarted) {
+        return;
+      } else {
+        setState(() => _aguardandoGoogle = false);
       }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && !_aguardandoGoogle) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -271,8 +305,26 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  Widget _chipPlataforma() {
+    final label = isNativeApp ? 'App instalado' : 'Versão web';
+    final cor = isNativeApp ? Colors.green.shade700 : Colors.blue.shade700;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: cor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: cor.withValues(alpha: 0.35)),
+        ),
+        child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: cor)),
+      ),
+    );
+  }
+
   Widget _secaoBiometria() {
-    if (kIsWeb) {
+    if (!isNativeApp) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 12),
         child: Material(
@@ -367,7 +419,9 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
+      body: Stack(
+        children: [
+          Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -464,7 +518,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
+                      _chipPlataforma(),
                       _secaoBiometria(),
                       if (_erro != null) ...[
                         Container(
@@ -578,6 +633,42 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
+      ),
+          if (_aguardandoGoogle)
+            Container(
+              color: Colors.black54,
+              child: Center(
+                child: Card(
+                  margin: const EdgeInsets.all(32),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const CircularProgressIndicator(color: verdeEscuro),
+                        const SizedBox(height: 16),
+                        Text(
+                          isNativeApp
+                              ? 'Conclua o login Google na janela do app.\nVocê voltará automaticamente.'
+                              : 'Conclua o login no navegador e volte para esta página.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey.shade800, fontSize: 14),
+                        ),
+                        const SizedBox(height: 16),
+                        TextButton(
+                          onPressed: () => setState(() {
+                            _aguardandoGoogle = false;
+                            _loading = false;
+                          }),
+                          child: const Text('Cancelar'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/app_platform.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/auth/auth_result.dart';
 import '../../core/theme.dart';
@@ -17,11 +18,30 @@ class _CriarContaScreenState extends State<CriarContaScreen> {
   final _senhaCtrl = TextEditingController();
   final _confirmaSenhaCtrl = TextEditingController();
   bool _loading = false;
+  bool _aguardandoGoogle = false;
   String? _erro;
   String? _sucesso;
+  AuthProvider? _authProv;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _authProv = context.read<AuthProvider>();
+      _authProv!.addListener(_onAuthChanged);
+    });
+  }
+
+  void _onAuthChanged() {
+    if (!mounted || _authProv == null) return;
+    if (_authProv!.autenticado) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
+  }
 
   @override
   void dispose() {
+    _authProv?.removeListener(_onAuthChanged);
     _nomeCtrl.dispose();
     _emailCtrl.dispose();
     _senhaCtrl.dispose();
@@ -80,6 +100,29 @@ class _CriarContaScreenState extends State<CriarContaScreen> {
     }
   }
 
+  Future<void> _criarComGoogle() async {
+    setState(() {
+      _loading = true;
+      _aguardandoGoogle = true;
+      _erro = null;
+      _sucesso = null;
+    });
+    final result = await context.read<AuthProvider>().loginGoogle();
+    if (!mounted) return;
+    if (result.status == AuthStatus.error) {
+      setState(() {
+        _erro = result.message;
+        _loading = false;
+        _aguardandoGoogle = false;
+      });
+    } else if (result.status != AuthStatus.oauthStarted) {
+      setState(() {
+        _loading = false;
+        _aguardandoGoogle = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -105,10 +148,31 @@ class _CriarContaScreenState extends State<CriarContaScreen> {
                 const Text('Novo Cadastro', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
                 const SizedBox(height: 6),
                 Text(
-                  'Após criar a conta, você preencherá seu cadastro na academia para o professor validar e definir sua turma.',
+                  isNativeApp
+                      ? 'Use Google ou e-mail. Depois preencha os dados da academia que o Google não traz (telefone, cidade, etc.).'
+                      : 'Na web, use Google ou e-mail. Complete o cadastro da academia após entrar.',
                   style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: _loading ? null : _criarComGoogle,
+                  icon: const Icon(Icons.g_mobiledata, size: 22),
+                  label: const Text('Criar conta com Google'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    side: BorderSide(color: Colors.grey.shade300),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(children: [
+                  Expanded(child: Divider(color: Colors.grey.shade300)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text('ou e-mail', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                  ),
+                  Expanded(child: Divider(color: Colors.grey.shade300)),
+                ]),
+                const SizedBox(height: 16),
                 if (_erro != null) ...[
                   Container(
                     padding: const EdgeInsets.all(12),

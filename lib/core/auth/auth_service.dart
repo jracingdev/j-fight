@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../app_platform.dart';
 import '../supabase_service.dart';
 import '../../models/usuario.dart';
 import 'auth_result.dart';
+import 'oauth_config.dart';
 
 /// Apenas estes e-mails podem ter role admin (case-insensitive).
 const Set<String> kAdminEmails = {
@@ -50,10 +52,17 @@ class AuthService {
     try {
       await supabase.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: kIsWeb ? null : 'io.supabase.flutter://callback',
-        authScreenLaunchMode: LaunchMode.externalApplication,
+        redirectTo: OAuthConfig.redirectUrl,
+        authScreenLaunchMode: isWebApp
+            ? LaunchMode.platformDefault
+            : LaunchMode.inAppWebView,
       );
-      return const AuthResult(status: AuthStatus.success);
+      return AuthResult(
+        status: AuthStatus.oauthStarted,
+        message: isWebApp
+            ? 'Conclua o login no navegador e volte para o site.'
+            : 'Conclua o login na janela do app.',
+      );
     } on AuthException catch (e) {
       return AuthResult(status: AuthStatus.error, message: _mensagemAuth(e));
     } catch (e) {
@@ -209,7 +218,7 @@ class AuthService {
     try {
       await supabase.auth.resetPasswordForEmail(
         e,
-        redirectTo: kIsWeb ? 'https://jracingdev.github.io/smbjj/' : null,
+        redirectTo: isWebApp ? OAuthConfig.webRedirect : null,
       );
       return const AuthResult(
         status: AuthStatus.success,

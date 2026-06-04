@@ -3,6 +3,7 @@ import '../../models/usuario.dart';
 enum AuthStatus {
   success,
   needsEmailConfirmation,
+  oauthStarted,
   error,
 }
 

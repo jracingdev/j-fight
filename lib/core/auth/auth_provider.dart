@@ -57,7 +57,7 @@ class AuthProvider extends ChangeNotifier {
         final user = data.session?.user ?? Supabase.instance.client.auth.currentUser;
         if (user != null) {
           _usuario = await AuthService.instance.ensurePerfilUsuario(user);
-          if (!isAdmin) {
+          if (_usuario != null && !isAdmin) {
             await _atualizarVinculoAluno();
           } else {
             _alunoVinculado = null;
