@@ -4,6 +4,7 @@ import '../../core/theme.dart';
 import '../../models/aluno.dart';
 import '../../repositories/aluno_repository.dart';
 import '../../utils/bjj_utils.dart';
+import '../../widgets/aluno_financeiro_sheet.dart';
 import '../../widgets/faixa_badge.dart';
 import 'aluno_form_screen.dart';
 import 'validar_aluno_screen.dart';
@@ -111,6 +112,17 @@ class AlunosScreenState extends State<AlunosScreen> {
       MaterialPageRoute(builder: (_) => ValidarAlunoScreen(aluno: a)),
     );
     if (ok == true) _load();
+  }
+
+  Future<void> _financeiro(Aluno a) async {
+    final r = await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => AlunoFinanceiroSheet(aluno: a),
+    );
+    if (r != null) _load();
   }
 
   @override
@@ -240,6 +252,9 @@ class AlunosScreenState extends State<AlunosScreen> {
                             onDelete: () => _deletar(_filtrados[i]),
                             onValidar: !_filtrados[i].cadastroValidado ? () => _validar(_filtrados[i]) : null,
                             onTurmas: _filtrados[i].cadastroValidado ? () => _gerenciarTurmas(_filtrados[i]) : null,
+                            onFinanceiro: _filtrados[i].cadastroValidado
+                                ? () => _financeiro(_filtrados[i])
+                                : null,
                           ),
                         ),
                       ),
@@ -257,6 +272,7 @@ class _AlunoCard extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback? onValidar;
   final VoidCallback? onTurmas;
+  final VoidCallback? onFinanceiro;
 
   const _AlunoCard({
     required this.aluno,
@@ -265,6 +281,7 @@ class _AlunoCard extends StatelessWidget {
     required this.onDelete,
     this.onValidar,
     this.onTurmas,
+    this.onFinanceiro,
   });
 
   @override
@@ -298,6 +315,8 @@ class _AlunoCard extends StatelessWidget {
               Wrap(spacing: 6, children: [
                 if (!aluno.ativo) _chip('Inativo', Colors.grey),
                 if (!aluno.cadastroValidado) _chip('Pendente', Colors.amber) else _chip('Validado', Colors.green),
+                if (aluno.bolsista) _chip('Bolsista', Colors.blue.shade100, textColor: Colors.blue.shade900),
+                if (!aluno.cobrancaAtiva && aluno.cadastroValidado) _chip('Sem cobrança', Colors.grey.shade300),
                 if (!aluno.cadastroCompleto && !aluno.cadastroValidado) _chip('Incompleto', Colors.red.shade100, textColor: Colors.red.shade800),
                 ...turmas.map((t) => _chip(t.nome, Colors.teal.shade100, textColor: Colors.teal.shade900)),
                 if (aluno.telefone != null) _chip(aluno.telefone!, Colors.blue.shade100, textColor: Colors.blue.shade800),
@@ -317,6 +336,12 @@ class _AlunoCard extends StatelessWidget {
                     onPressed: onTurmas,
                     icon: const Icon(Icons.groups, color: verdeEscuro),
                     tooltip: 'Turmas',
+                  ),
+                if (onFinanceiro != null)
+                  IconButton(
+                    onPressed: onFinanceiro,
+                    icon: const Icon(Icons.payments_outlined, color: verdeEscuro),
+                    tooltip: 'Financeiro',
                   ),
                 Expanded(child: OutlinedButton.icon(
                   onPressed: onEdit,

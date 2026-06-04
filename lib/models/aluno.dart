@@ -19,6 +19,17 @@
   final bool cadastroValidado;
   final String? createdAt;
 
+  // Financeiro
+  final bool bolsista;
+  final double percentualBolsa;
+  final String? grupoFamiliar;
+  final String? cpfPagante;
+  final bool cobrancaAtiva;
+  final String? dataInicioCobranca;
+  final String? dataInterrupcaoCobranca;
+  final String? justificativaInterrupcao;
+  final double? valorMensalidadeCustom;
+
   bool get cadastroCompleto =>
       nome.trim().isNotEmpty &&
       dataNascimento != null &&
@@ -48,6 +59,15 @@
     this.ativo = true,
     this.cadastroValidado = false,
     this.createdAt,
+    this.bolsista = false,
+    this.percentualBolsa = 0,
+    this.grupoFamiliar,
+    this.cpfPagante,
+    this.cobrancaAtiva = true,
+    this.dataInicioCobranca,
+    this.dataInterrupcaoCobranca,
+    this.justificativaInterrupcao,
+    this.valorMensalidadeCustom,
   });
 
   factory Aluno.fromMap(Map<String, dynamic> m) => Aluno(
@@ -68,8 +88,19 @@
         peso: m['peso']?.toDouble(),
         fotoUrl: m['foto_url'],
         ativo: (m['ativo'] is bool ? m['ativo'] : (m['ativo'] ?? 1) == 1),
-        cadastroValidado: (m['cadastro_validado'] is bool ? m['cadastro_validado'] : (m['cadastro_validado'] ?? 0) == 1),
+        cadastroValidado: (m['cadastro_validado'] is bool
+            ? m['cadastro_validado']
+            : (m['cadastro_validado'] ?? 0) == 1),
         createdAt: m['created_at'],
+        bolsista: m['bolsista'] == true,
+        percentualBolsa: (m['percentual_bolsa'] as num?)?.toDouble() ?? 0,
+        grupoFamiliar: m['grupo_familiar'] as String?,
+        cpfPagante: m['cpf_pagante'] as String?,
+        cobrancaAtiva: m['cobranca_ativa'] != false,
+        dataInicioCobranca: m['data_inicio_cobranca'] as String?,
+        dataInterrupcaoCobranca: m['data_interrupcao_cobranca'] as String?,
+        justificativaInterrupcao: m['justificativa_interrupcao'] as String?,
+        valorMensalidadeCustom: (m['valor_mensalidade_custom'] as num?)?.toDouble(),
       );
 
   Map<String, dynamic> toMap() => {
@@ -93,15 +124,46 @@
         'cadastro_validado': cadastroValidado,
         'created_at': createdAt ?? DateTime.now().toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
+        'bolsista': bolsista,
+        'percentual_bolsa': percentualBolsa,
+        'grupo_familiar': grupoFamiliar,
+        'cpf_pagante': cpfPagante,
+        'cobranca_ativa': cobrancaAtiva,
+        'data_inicio_cobranca': dataInicioCobranca,
+        'data_interrupcao_cobranca': dataInterrupcaoCobranca,
+        'justificativa_interrupcao': justificativaInterrupcao,
+        'valor_mensalidade_custom': valorMensalidadeCustom,
       };
 
   Aluno copyWith({
-    String? nome, String? email, String? dataNascimento, String? sexo,
-    String? telefone, String? nomeResponsavel, String? telefoneResponsavel,
-    String? endereco, String? cidade, String? estado, String? cep,
-    String? faixa, int? grau, double? peso, String? fotoUrl,
-    bool? ativo, bool? cadastroValidado,
-  }) => Aluno(
+    String? nome,
+    String? email,
+    String? dataNascimento,
+    String? sexo,
+    String? telefone,
+    String? nomeResponsavel,
+    String? telefoneResponsavel,
+    String? endereco,
+    String? cidade,
+    String? estado,
+    String? cep,
+    String? faixa,
+    int? grau,
+    double? peso,
+    String? fotoUrl,
+    bool? ativo,
+    bool? cadastroValidado,
+    bool? bolsista,
+    double? percentualBolsa,
+    String? grupoFamiliar,
+    String? cpfPagante,
+    bool? cobrancaAtiva,
+    String? dataInicioCobranca,
+    String? dataInterrupcaoCobranca,
+    String? justificativaInterrupcao,
+    double? valorMensalidadeCustom,
+  }) =>
+      Aluno(
         id: id,
         nome: nome ?? this.nome,
         email: email ?? this.email,
@@ -121,6 +183,14 @@
         ativo: ativo ?? this.ativo,
         cadastroValidado: cadastroValidado ?? this.cadastroValidado,
         createdAt: createdAt,
+        bolsista: bolsista ?? this.bolsista,
+        percentualBolsa: percentualBolsa ?? this.percentualBolsa,
+        grupoFamiliar: grupoFamiliar ?? this.grupoFamiliar,
+        cpfPagante: cpfPagante ?? this.cpfPagante,
+        cobrancaAtiva: cobrancaAtiva ?? this.cobrancaAtiva,
+        dataInicioCobranca: dataInicioCobranca ?? this.dataInicioCobranca,
+        dataInterrupcaoCobranca: dataInterrupcaoCobranca ?? this.dataInterrupcaoCobranca,
+        justificativaInterrupcao: justificativaInterrupcao ?? this.justificativaInterrupcao,
+        valorMensalidadeCustom: valorMensalidadeCustom ?? this.valorMensalidadeCustom,
       );
 }
-

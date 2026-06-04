@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/financeiro/calculo_mensalidade.dart';
+import '../../core/financeiro/projecao_financeira.dart';
 import '../../core/theme.dart';
 import '../../core/mp_service.dart';
 import '../../models/aluno.dart';
+import '../../models/financeiro_config.dart';
 import '../../models/mensalidade.dart';
+import '../../models/turma.dart';
 import '../../repositories/aluno_repository.dart';
+import '../../repositories/financeiro_config_repository.dart';
 import '../../repositories/mensalidade_repository.dart';
+import '../../repositories/turma_repository.dart';
 import '../../utils/bjj_utils.dart';
 import '../../utils/whatsapp_utils.dart';
+import 'financeiro_config_screen.dart';
 import 'mp_config_screen.dart';
 
 class FinanceiroScreen extends StatefulWidget {
@@ -20,10 +27,16 @@ class FinanceiroScreen extends StatefulWidget {
 class _FinanceiroScreenState extends State<FinanceiroScreen> with SingleTickerProviderStateMixin {
   final _mensRepo = MensalidadeRepository();
   final _alunoRepo = AlunoRepository();
+  final _configRepo = FinanceiroConfigRepository();
+  final _turmaRepo = TurmaRepository();
   late final TabController _tabs = TabController(length: 3, vsync: this);
 
   List<Mensalidade> _mensalidades = [];
+  List<Mensalidade> _mensalidadesAno = [];
   List<Aluno> _alunos = [];
+  List<Turma> _turmas = [];
+  Map<String, List<String>> _alunoIdsPorTurma = {};
+  FinanceiroConfig _config = const FinanceiroConfig();
   bool _loading = true;
   int _mes = DateTime.now().month;
   int _ano = DateTime.now().year;
@@ -44,21 +57,37 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> with SingleTickerPr
   Future<void> _load() async {
     setState(() => _loading = true);
     final token = await MercadoPagoService.instance.getAccessToken();
+    final turmas = await _turmaRepo.listar();
+    final mapTurma = <String, List<String>>{};
+    for (final t in turmas) {
+      mapTurma[t.id] = await _turmaRepo.alunoIdsPorTurma(t.id);
+    }
     final results = await Future.wait([
       _mensRepo.listar(mes: _mes, ano: _ano),
+      _mensRepo.listar(ano: _ano),
       _alunoRepo.listar(ativo: true),
+      _configRepo.obter(),
     ]);
     if (mounted) setState(() {
       _mensalidades = results[0] as List<Mensalidade>;
-      _alunos = results[1] as List<Aluno>;
+      _mensalidadesAno = results[1] as List<Mensalidade>;
+      _alunos = results[2] as List<Aluno>;
+      _config = results[3] as FinanceiroConfig;
+      _turmas = turmas;
+      _alunoIdsPorTurma = mapTurma;
       _mpConfigurado = token != null && token.isNotEmpty;
       _loading = false;
     });
   }
 
+  List<Aluno> get _alunosCobranca =>
+      _alunos.where((a) => a.cadastroValidado && a.cobrancaAtiva).toList();
+
+  double _valorAluno(Aluno a) => calcularValorMensalidadeAluno(a, _config, _alunosCobranca);
+
   // Helpers
   double get _totalArrecadado => _mensalidades.where((m) => m.status == 'pago').fold(0, (s, m) => s + m.valor);
-  double get _totalEsperado => _alunos.fold(0, (s, a) => s + getValorMensalidade(a.dataNascimento));
+  double get _totalEsperado => _alunosCobranca.fold(0, (s, a) => s + _valorAluno(a));
   List<Aluno> get _alunosPagos => _alunos.where((a) => _mensalidades.any((m) => m.alunoId == a.id && m.status == 'pago')).toList();
   List<Aluno> get _alunosNaoPagos => _alunos.where((a) => !_mensalidades.any((m) => m.alunoId == a.id && m.status == 'pago')).toList();
   int get _diaAtual => DateTime.now().month == _mes && DateTime.now().year == _ano ? DateTime.now().day : 0;
@@ -69,6 +98,17 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> with SingleTickerPr
       appBar: AppBar(
         title: const Text('Financeiro'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.tune),
+            tooltip: 'Valores e descontos',
+            onPressed: () async {
+              final ok = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(builder: (_) => const FinanceiroConfigScreen()),
+              );
+              if (ok == true) _load();
+            },
+          ),
           IconButton(icon: const Icon(Icons.settings_outlined), tooltip: 'Mercado Pago',
             onPressed: () async {
               await Navigator.push(context, MaterialPageRoute(builder: (_) => const MpConfigScreen()));
@@ -94,25 +134,42 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> with SingleTickerPr
               controller: _tabs,
               children: [
                 _PainelBI(
-                  alunos: _alunos, mensalidades: _mensalidades,
-                  mes: _mes, ano: _ano, diaAtual: _diaAtual,
-                  totalArrecadado: _totalArrecadado, totalEsperado: _totalEsperado,
-                  alunosPagos: _alunosPagos, alunosNaoPagos: _alunosNaoPagos,
+                  alunos: _alunos,
+                  alunosCobranca: _alunosCobranca,
+                  mensalidades: _mensalidades,
+                  mensalidadesAno: _mensalidadesAno,
+                  config: _config,
+                  turmas: _turmas,
+                  alunoIdsPorTurma: _alunoIdsPorTurma,
+                  mes: _mes,
+                  ano: _ano,
+                  diaAtual: _diaAtual,
+                  totalArrecadado: _totalArrecadado,
+                  totalEsperado: _totalEsperado,
+                  alunosPagos: _alunosPagos,
+                  alunosNaoPagos: _alunosNaoPagos,
+                  valorAluno: _valorAluno,
                   onChangeMes: (m, a) { setState(() { _mes = m; _ano = a; }); _load(); },
                 ),
                 _MensalidadesTab(
-                  alunos: _alunos, mensalidades: _mensalidades,
-                  mes: _mes, ano: _ano,
+                  alunos: _alunos,
+                  mensalidades: _mensalidades,
+                  mes: _mes,
+                  ano: _ano,
                   totalArrecadado: _totalArrecadado,
                   pendentes: _mensalidades.where((m) => m.status != 'pago').length,
+                  valorAluno: _valorAluno,
                   onRefresh: _load,
                   onChangeMes: (m, a) { setState(() { _mes = m; _ano = a; }); _load(); },
                 ),
                 _MpTab(
-                  alunos: _alunos, mensalidades: _mensalidades,
-                  mes: _mes, ano: _ano,
+                  alunos: _alunos,
+                  mensalidades: _mensalidades,
+                  mes: _mes,
+                  ano: _ano,
                   mpConfigurado: _mpConfigurado,
                   alunosNaoPagos: _alunosNaoPagos,
+                  valorAluno: _valorAluno,
                   onRefresh: _load,
                 ),
               ],
@@ -125,36 +182,63 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> with SingleTickerPr
 // PAINEL DE BI
 // ─────────────────────────────────────────────
 class _PainelBI extends StatelessWidget {
-  final List<Aluno> alunos, alunosPagos, alunosNaoPagos;
-  final List<Mensalidade> mensalidades;
+  final List<Aluno> alunos, alunosCobranca, alunosPagos, alunosNaoPagos;
+  final List<Mensalidade> mensalidades, mensalidadesAno;
+  final List<Turma> turmas;
+  final Map<String, List<String>> alunoIdsPorTurma;
+  final FinanceiroConfig config;
   final int mes, ano, diaAtual;
   final double totalArrecadado, totalEsperado;
+  final double Function(Aluno) valorAluno;
   final Function(int mes, int ano) onChangeMes;
 
   const _PainelBI({
-    required this.alunos, required this.mensalidades, required this.mes, required this.ano,
-    required this.diaAtual, required this.totalArrecadado, required this.totalEsperado,
-    required this.alunosPagos, required this.alunosNaoPagos, required this.onChangeMes,
+    required this.alunos,
+    required this.alunosCobranca,
+    required this.mensalidades,
+    required this.mensalidadesAno,
+    required this.config,
+    required this.turmas,
+    required this.alunoIdsPorTurma,
+    required this.mes,
+    required this.ano,
+    required this.diaAtual,
+    required this.totalArrecadado,
+    required this.totalEsperado,
+    required this.alunosPagos,
+    required this.alunosNaoPagos,
+    required this.valorAluno,
+    required this.onChangeMes,
   });
 
-  double get _pctPagos => alunos.isEmpty ? 0 : alunosPagos.length / alunos.length;
-  double get _inadimplencia => alunos.isEmpty ? 0 : alunosNaoPagos.length / alunos.length;
+  double get _pctPagos => alunosCobranca.isEmpty ? 0 : alunosPagos.length / alunosCobranca.length;
+  double get _inadimplencia => alunosCobranca.isEmpty ? 0 : alunosNaoPagos.length / alunosCobranca.length;
   double get _pctArrecadado => totalEsperado == 0 ? 0 : totalArrecadado / totalEsperado;
 
   @override
   Widget build(BuildContext context) {
     final mesNome = meses[mes - 1];
     final anoAtual = DateTime.now().year;
-    final mesAtual = DateTime.now().month;
+    final venc = config.diaVencimento;
+
+    final proj = calcularProjecao(
+      alunosAtivos: alunos,
+      config: config,
+      mensalidadesAno: mensalidadesAno,
+      alunoIdsPorTurma: alunoIdsPorTurma,
+      turmas: turmas,
+      mesRef: mes,
+      anoRef: ano,
+    );
 
     // Alertas
     final alertas = <_Alerta>[];
-    if (diaAtual >= 10 && alunosNaoPagos.isNotEmpty) {
+    if (diaAtual >= venc && alunosNaoPagos.isNotEmpty) {
       alertas.add(_Alerta(cor: Colors.red, icon: Icons.warning_rounded,
-          texto: '${alunosNaoPagos.length} aluno(s) em atraso — vencimento foi dia 10'));
-    } else if (diaAtual >= 5 && diaAtual < 10 && alunosNaoPagos.isNotEmpty) {
+          texto: '${alunosNaoPagos.length} aluno(s) em atraso — vencimento foi dia $venc'));
+    } else if (diaAtual >= 5 && diaAtual < venc && alunosNaoPagos.isNotEmpty) {
       alertas.add(_Alerta(cor: Colors.orange, icon: Icons.schedule,
-          texto: '${alunosNaoPagos.length} aluno(s) vencem em ${10 - diaAtual} dias'));
+          texto: '${alunosNaoPagos.length} aluno(s) vencem em ${venc - diaAtual} dias'));
     } else if (diaAtual == 1 && alunosNaoPagos.isNotEmpty) {
       alertas.add(_Alerta(cor: Colors.blue, icon: Icons.info_outline,
           texto: 'Início do mês: ${alunosNaoPagos.length} mensalidade(s) pendentes'));
@@ -186,16 +270,66 @@ class _PainelBI extends StatelessWidget {
       // Alertas
       if (alertas.isNotEmpty) ...alertas.map((a) => _AlertaBanner(alerta: a)),
 
-      // Cards principais
+      // KPIs principais
+      Row(children: [
+        Expanded(child: _KpiTile(
+          titulo: 'Receita/mês',
+          valor: 'R\$ ${proj.receitaMensalTotal.toStringAsFixed(0)}',
+          icone: Icons.trending_up,
+          cor: Colors.green,
+        )),
+        const SizedBox(width: 8),
+        Expanded(child: _KpiTile(
+          titulo: 'Projeção ano',
+          valor: 'R\$ ${proj.projecaoPositivaAno.toStringAsFixed(0)}',
+          icone: Icons.calendar_month,
+          cor: Colors.teal,
+        )),
+      ]),
+      const SizedBox(height: 8),
+      Row(children: [
+        Expanded(child: _KpiTile(
+          titulo: 'Risco (pend.)',
+          valor: 'R\$ ${proj.riscoInadimplencia.toStringAsFixed(0)}',
+          icone: Icons.trending_down,
+          cor: Colors.red,
+        )),
+        const SizedBox(width: 8),
+        Expanded(child: _KpiTile(
+          titulo: 'Inadimplência',
+          valor: '${(_inadimplencia * 100).toStringAsFixed(0)}%',
+          icone: Icons.pie_chart_outline,
+          cor: _inadimplencia > 0.3 ? Colors.red : Colors.orange,
+        )),
+      ]),
+      const SizedBox(height: 12),
+
       _BiCard(
         child: Column(children: [
-          _BiRow(label: 'Alunos ativos', value: '${alunos.length}', icon: Icons.people),
-          _BiRow(label: 'Mensalidade esperada', value: 'R\$ ${totalEsperado.toStringAsFixed(2)}', icon: Icons.calculate_outlined),
+          _BiRow(label: 'Alunos com cobrança', value: '${alunosCobranca.length}', icon: Icons.people),
+          _BiRow(label: 'Mensalidade esperada ($mesNome)', value: 'R\$ ${totalEsperado.toStringAsFixed(2)}', icon: Icons.calculate_outlined),
           _BiRow(label: 'Arrecadado em $mesNome', value: 'R\$ ${totalArrecadado.toStringAsFixed(2)}', icon: Icons.attach_money, cor: Colors.green),
-          _BiRow(label: 'Diferença (gap)', value: 'R\$ ${(totalEsperado - totalArrecadado).toStringAsFixed(2)}', icon: Icons.remove_circle_outline, cor: totalArrecadado < totalEsperado ? Colors.red : Colors.green),
+          _BiRow(label: 'Gap do mês', value: 'R\$ ${proj.gapMesAtual.toStringAsFixed(2)}', icon: Icons.remove_circle_outline, cor: proj.gapMesAtual > 0 ? Colors.red : Colors.green),
         ]),
       ),
       const SizedBox(height: 12),
+
+      if (proj.porTurma.any((p) => p.qtdAlunos > 0)) ...[
+        _BiCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Projeção por turma', style: TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 10),
+          ...proj.porTurma.where((p) => p.qtdAlunos > 0).take(8).map((p) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(children: [
+                  Expanded(child: Text('${p.turma.nome} (${p.qtdAlunos})', style: const TextStyle(fontSize: 12))),
+                  Text('R\$ ${p.receitaMensal.toStringAsFixed(0)}/mês', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                  const SizedBox(width: 8),
+                  Text('+${p.receitaAnoRestante.toStringAsFixed(0)}', style: TextStyle(fontSize: 11, color: Colors.teal.shade700)),
+                ]),
+              )),
+        ])),
+        const SizedBox(height: 12),
+      ],
 
       // Barras de progresso
       _BiCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -234,15 +368,16 @@ class _PainelBI extends StatelessWidget {
       ])),
       const SizedBox(height: 12),
 
-      // Tolerâncias
       _BiCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const Text('Regras de Cobrança', style: TextStyle(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
-        _BiRow(label: 'Vencimento mensal', value: 'Dia 10', icon: Icons.event),
-        _BiRow(label: 'Alerta antecipado', value: 'Dias 1 e 5', icon: Icons.notifications_outlined),
-        _BiRow(label: 'Valor adulto', value: 'R\$ ${valorCheio.toStringAsFixed(2)}', icon: Icons.person),
-        _BiRow(label: 'Valor menor de 18', value: 'R\$ ${valorMenor.toStringAsFixed(2)}', icon: Icons.child_care),
-        _BiRow(label: 'Atraso (após dia 10)', value: 'Perde desconto etário', icon: Icons.warning_amber_outlined, cor: Colors.orange),
+        _BiRow(label: 'Vencimento mensal', value: 'Dia $venc', icon: Icons.event),
+        _BiRow(label: 'Valor adulto', value: 'R\$ ${config.valorAdulto.toStringAsFixed(2)}', icon: Icons.person),
+        _BiRow(label: 'Valor menor de 18', value: 'R\$ ${config.valorMenor.toStringAsFixed(2)}', icon: Icons.child_care),
+        _BiRow(label: '2º familiar', value: '${config.desconto2oFamiliarPercent.toStringAsFixed(0)}% off', icon: Icons.family_restroom),
+        _BiRow(label: '3º+ familiar', value: '${config.desconto3oFamiliarPercent.toStringAsFixed(0)}% off', icon: Icons.groups),
+        _BiRow(label: 'Mesmo pagante', value: '${config.descontoMesmoPagantePercent.toStringAsFixed(0)}% off', icon: Icons.account_balance_wallet),
+        _BiRow(label: 'Bolsistas', value: 'Até 100% no cadastro', icon: Icons.school, cor: Colors.blue),
       ])),
       const SizedBox(height: 80),
     ]);
@@ -281,6 +416,25 @@ class _BiCard extends StatelessWidget {
   const _BiCard({required this.child});
   @override
   Widget build(BuildContext context) => Card(child: Padding(padding: const EdgeInsets.all(16), child: child));
+}
+
+class _KpiTile extends StatelessWidget {
+  final String titulo, valor;
+  final IconData icone;
+  final Color cor;
+  const _KpiTile({required this.titulo, required this.valor, required this.icone, required this.cor});
+  @override
+  Widget build(BuildContext context) => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Icon(icone, color: cor, size: 22),
+            const SizedBox(height: 6),
+            Text(titulo, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+            Text(valor, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: cor)),
+          ]),
+        ),
+      );
 }
 
 class _BiRow extends StatelessWidget {
@@ -358,13 +512,20 @@ class _MensalidadesTab extends StatelessWidget {
   final List<Mensalidade> mensalidades;
   final int mes, ano, pendentes;
   final double totalArrecadado;
+  final double Function(Aluno) valorAluno;
   final VoidCallback onRefresh;
   final Function(int, int) onChangeMes;
 
   const _MensalidadesTab({
-    required this.alunos, required this.mensalidades, required this.mes, required this.ano,
-    required this.totalArrecadado, required this.pendentes,
-    required this.onRefresh, required this.onChangeMes,
+    required this.alunos,
+    required this.mensalidades,
+    required this.mes,
+    required this.ano,
+    required this.totalArrecadado,
+    required this.pendentes,
+    required this.valorAluno,
+    required this.onRefresh,
+    required this.onChangeMes,
   });
 
   @override
@@ -444,7 +605,13 @@ class _MensalidadesTab extends StatelessWidget {
           onPressed: () async {
             await showModalBottomSheet(context: context, isScrollControlled: true, useSafeArea: true,
               shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-              builder: (_) => _NovaMensalidadeSheet(alunos: alunos, mes: mes, ano: ano, onSaved: onRefresh));
+              builder: (_) => _NovaMensalidadeSheet(
+                    alunos: alunos,
+                    mes: mes,
+                    ano: ano,
+                    valorAluno: valorAluno,
+                    onSaved: onRefresh,
+                  ));
           },
           icon: const Icon(Icons.add),
           label: const Text('Nova Mensalidade'),
@@ -462,11 +629,18 @@ class _MpTab extends StatefulWidget {
   final List<Mensalidade> mensalidades;
   final int mes, ano;
   final bool mpConfigurado;
+  final double Function(Aluno) valorAluno;
   final VoidCallback onRefresh;
 
   const _MpTab({
-    required this.alunos, required this.mensalidades, required this.mes, required this.ano,
-    required this.mpConfigurado, required this.alunosNaoPagos, required this.onRefresh,
+    required this.alunos,
+    required this.mensalidades,
+    required this.mes,
+    required this.ano,
+    required this.mpConfigurado,
+    required this.alunosNaoPagos,
+    required this.valorAluno,
+    required this.onRefresh,
   });
 
   @override
@@ -478,7 +652,8 @@ class _MpTabState extends State<_MpTab> {
 
   Future<void> _cobrarAluno(Aluno aluno) async {
     setState(() => _loadingMap[aluno.id] = true);
-    final valor = getValorMensalidade(aluno.dataNascimento);
+    final mensList = widget.mensalidades.where((m) => m.alunoId == aluno.id);
+    final valor = mensList.isEmpty ? widget.valorAluno(aluno) : mensList.first.valor;
     final mesNome = meses[widget.mes - 1];
 
     final pref = await MercadoPagoService.instance.criarCobranca(
@@ -571,7 +746,8 @@ class _MpTabState extends State<_MpTab> {
       else
         ...widget.alunosNaoPagos.map((a) {
           final tel = a.telefoneResponsavel ?? a.telefone;
-          final valor = getValorMensalidade(a.dataNascimento);
+          final mens = widget.mensalidades.where((m) => m.alunoId == a.id);
+          final valor = mens.isEmpty ? widget.valorAluno(a) : mens.first.valor;
           final carregando = _loadingMap[a.id] ?? false;
           return Card(
             margin: const EdgeInsets.only(bottom: 8),
@@ -811,8 +987,15 @@ class _MensalidadeCard extends StatelessWidget {
 class _NovaMensalidadeSheet extends StatefulWidget {
   final List<Aluno> alunos;
   final int mes, ano;
+  final double Function(Aluno) valorAluno;
   final VoidCallback onSaved;
-  const _NovaMensalidadeSheet({required this.alunos, required this.mes, required this.ano, required this.onSaved});
+  const _NovaMensalidadeSheet({
+    required this.alunos,
+    required this.mes,
+    required this.ano,
+    required this.valorAluno,
+    required this.onSaved,
+  });
   @override
   State<_NovaMensalidadeSheet> createState() => _NovaMensalidadeSheetState();
 }
@@ -851,8 +1034,8 @@ class _NovaMensalidadeSheetState extends State<_NovaMensalidadeSheet> {
         const SizedBox(height: 16),
         DropdownButtonFormField<Aluno>(
           decoration: const InputDecoration(labelText: 'Aluno *', isDense: true),
-          items: widget.alunos.map((a) => DropdownMenuItem(value: a, child: Text('${a.nome} – R\$ ${getValorMensalidade(a.dataNascimento).toStringAsFixed(2)}'))).toList(),
-          onChanged: (a) => setState(() { _aluno = a; if (a != null) _valor = getValorMensalidade(a.dataNascimento); }),
+          items: widget.alunos.map((a) => DropdownMenuItem(value: a, child: Text('${a.nome} – R\$ ${widget.valorAluno(a).toStringAsFixed(2)}'))).toList(),
+          onChanged: (a) => setState(() { _aluno = a; if (a != null) _valor = widget.valorAluno(a); }),
         ),
         const SizedBox(height: 12),
         Row(children: [

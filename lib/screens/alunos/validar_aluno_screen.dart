@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../core/financeiro/mensalidade_gerador_service.dart';
 import '../../core/theme.dart';
 import '../../models/aluno.dart';
 import '../../models/turma.dart';
 import '../../repositories/aluno_repository.dart';
+import '../../repositories/financeiro_config_repository.dart';
 import '../../repositories/turma_repository.dart';
 import '../../utils/bjj_utils.dart';
 import '../../utils/date_utils.dart';
@@ -20,6 +22,8 @@ class ValidarAlunoScreen extends StatefulWidget {
 class _ValidarAlunoScreenState extends State<ValidarAlunoScreen> {
   final _alunoRepo = AlunoRepository();
   final _turmaRepo = TurmaRepository();
+  final _configRepo = FinanceiroConfigRepository();
+  final _gerador = MensalidadeGeradorService();
   List<Turma> _turmas = [];
   final Set<String> _turmasSelecionadas = {};
   String _faixa = 'branca';
@@ -27,12 +31,30 @@ class _ValidarAlunoScreenState extends State<ValidarAlunoScreen> {
   bool _loading = true;
   bool _salvando = false;
 
+  bool _bolsista = false;
+  final _pctBolsaCtrl = TextEditingController(text: '0');
+  final _grupoCtrl = TextEditingController();
+  final _cpfPaganteCtrl = TextEditingController();
+  bool _proRataPrimeiroMes = true;
+
   @override
   void initState() {
     super.initState();
     _faixa = widget.aluno.faixa;
     _grau = widget.aluno.grau;
+    _bolsista = widget.aluno.bolsista;
+    _pctBolsaCtrl.text = widget.aluno.percentualBolsa.toStringAsFixed(0);
+    _grupoCtrl.text = widget.aluno.grupoFamiliar ?? '';
+    _cpfPaganteCtrl.text = widget.aluno.cpfPagante ?? '';
     _load();
+  }
+
+  @override
+  void dispose() {
+    _pctBolsaCtrl.dispose();
+    _grupoCtrl.dispose();
+    _cpfPaganteCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -57,26 +79,53 @@ class _ValidarAlunoScreenState extends State<ValidarAlunoScreen> {
     }
 
     setState(() => _salvando = true);
-    final atualizado = widget.aluno.copyWith(faixa: _faixa, grau: _grau);
+    final primeiraValidacao = !widget.aluno.cadastroValidado;
+    final hoje = DateTime.now().toIso8601String().split('T').first;
+
+    final atualizado = widget.aluno.copyWith(
+      faixa: _faixa,
+      grau: _grau,
+      bolsista: _bolsista,
+      percentualBolsa: double.tryParse(_pctBolsaCtrl.text) ?? 0,
+      grupoFamiliar: _grupoCtrl.text.trim().isEmpty ? null : _grupoCtrl.text.trim(),
+      cpfPagante: _cpfPaganteCtrl.text.trim().isEmpty ? null : _cpfPaganteCtrl.text.trim(),
+      dataInicioCobranca: widget.aluno.dataInicioCobranca ?? hoje,
+      cobrancaAtiva: true,
+    );
     await _alunoRepo.atualizar(atualizado);
+
     if (widget.aluno.cadastroValidado) {
       await _turmaRepo.substituirTurmasAluno(widget.aluno.id, _turmasSelecionadas.toList());
     } else {
       await _alunoRepo.validarComTurmas(widget.aluno.id, _turmasSelecionadas.toList());
+      final cfg = await _configRepo.obter();
+      final alunoDb = await _alunoRepo.buscarPorId(widget.aluno.id) ?? atualizado.copyWith(cadastroValidado: true, ativo: true);
+      final n = await _gerador.gerarParaAlunoValidado(
+        alunoDb,
+        cfg,
+        proRataPrimeiroMes: _proRataPrimeiroMes,
+      );
+      if (mounted && primeiraValidacao) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$n mensalidade(s) gerada(s) para o ano vigente.'), backgroundColor: verdeEscuro),
+        );
+      }
     }
 
     if (mounted) {
       Navigator.pop(context, true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.aluno.cadastroValidado
-                ? 'Turmas de ${widget.aluno.nome} atualizadas!'
-                : '${widget.aluno.nome} validado e incluído na turma!',
+      if (!primeiraValidacao || widget.aluno.cadastroValidado) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              widget.aluno.cadastroValidado
+                  ? 'Turmas de ${widget.aluno.nome} atualizadas!'
+                  : '${widget.aluno.nome} validado e incluído na turma!',
+            ),
+            backgroundColor: verdeEscuro,
           ),
-          backgroundColor: verdeEscuro,
-        ),
-      );
+        );
+      }
     }
   }
 
@@ -84,9 +133,10 @@ class _ValidarAlunoScreenState extends State<ValidarAlunoScreen> {
   Widget build(BuildContext context) {
     final a = widget.aluno;
     final categoria = getCategoriaEtaria(a.dataNascimento);
+    final primeira = !a.cadastroValidado;
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.aluno.cadastroValidado ? 'Turmas do Aluno' : 'Validar Cadastro')),
+      appBar: AppBar(title: Text(a.cadastroValidado ? 'Turmas do Aluno' : 'Validar Cadastro')),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: verdeEscuro))
           : ListView(
@@ -155,6 +205,51 @@ class _ValidarAlunoScreenState extends State<ValidarAlunoScreen> {
                     ),
                   ),
                 ]),
+                if (primeira) ...[
+                  const SizedBox(height: 20),
+                  const Text('Cobrança e descontos', style: TextStyle(fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Ao validar, serão geradas as mensalidades do mês atual até dezembro.',
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 10),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Bolsista'),
+                    value: _bolsista,
+                    onChanged: (v) => setState(() => _bolsista = v),
+                  ),
+                  if (_bolsista)
+                    TextField(
+                      controller: _pctBolsaCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Percentual da bolsa (%)', suffixText: '%'),
+                    ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _grupoCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Grupo familiar (código)',
+                      helperText: 'Mesmo código para irmãos — desconto progressivo',
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _cpfPaganteCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'CPF do pagante',
+                      helperText: 'Desconto se o mesmo responsável paga mais de um aluno',
+                    ),
+                  ),
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: _proRataPrimeiroMes,
+                    onChanged: (v) => setState(() => _proRataPrimeiroMes = v ?? true),
+                    title: const Text('Pró-rata no primeiro mês', style: TextStyle(fontSize: 14)),
+                    subtitle: const Text('Cobra proporcional aos dias restantes no mês de entrada'),
+                  ),
+                ],
                 const SizedBox(height: 20),
                 const Text('Turma(s) *', style: TextStyle(fontWeight: FontWeight.w800)),
                 const SizedBox(height: 4),
@@ -189,7 +284,7 @@ class _ValidarAlunoScreenState extends State<ValidarAlunoScreen> {
                 }),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
-                  onPressed: _salvando || (!widget.aluno.cadastroValidado && !a.cadastroCompleto) ? null : _validar,
+                  onPressed: _salvando || (primeira && !a.cadastroCompleto) ? null : _validar,
                   icon: const Icon(Icons.verified_user),
                   label: _salvando
                       ? const SizedBox(
@@ -197,7 +292,7 @@ class _ValidarAlunoScreenState extends State<ValidarAlunoScreen> {
                           width: 18,
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                         )
-                      : Text(widget.aluno.cadastroValidado ? 'Salvar turmas' : 'Validar e incluir na turma'),
+                      : Text(a.cadastroValidado ? 'Salvar turmas' : 'Validar e gerar mensalidades'),
                 ),
               ],
             ),
