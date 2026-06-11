@@ -708,68 +708,74 @@ class _MensalidadesTabState extends State<_MensalidadesTab> {
         color: Colors.white,
         padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
         child: Column(children: [
-          Row(children: [
-            Expanded(
-              flex: 3,
-              child: DropdownButtonFormField<int>(
-                value: widget.mes,
-                isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Mês', isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8)),
-                items: List.generate(12, (i) => DropdownMenuItem(value: i + 1, child: Text(meses[i], overflow: TextOverflow.ellipsis))),
-                onChanged: (v) => widget.onChangeMes(v!, widget.ano),
-              ),
-            ),
-            const SizedBox(width: 6),
-            Expanded(
-              flex: 2,
-              child: DropdownButtonFormField<int>(
-                value: widget.ano,
-                isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Ano', isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8)),
-                items: [anoAtual - 1, anoAtual, anoAtual + 1].map((y) => DropdownMenuItem(value: y, child: Text('$y'))).toList(),
-                onChanged: (v) => widget.onChangeMes(widget.mes, v!),
-              ),
-            ),
-            const SizedBox(width: 6),
-            Expanded(
-              flex: 3,
-              child: DropdownButtonFormField<String?>(
-                value: _turmaFiltroId,
-                isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Turmas', isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8)),
-                items: [
-                  const DropdownMenuItem(value: null, child: Text('Todas', overflow: TextOverflow.ellipsis)),
-                  ...widget.turmas.map((t) => DropdownMenuItem(
-                        value: t.id,
-                        child: Text(nomeTurmaCurto(t.nome), overflow: TextOverflow.ellipsis),
-                      )),
-                ],
-                onChanged: (v) => setState(() => _turmaFiltroId = v),
-              ),
-            ),
-          ]),
-          const SizedBox(height: 6),
-          Row(children: [
-            Expanded(
-              child: TextField(
-                controller: _buscaCtrl,
-                decoration: const InputDecoration(
-                  hintText: 'Buscar nome',
-                  prefixIcon: Icon(Icons.search, size: 18),
-                  isDense: true,
-                  contentPadding: EdgeInsets.symmetric(vertical: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 118,
+                  child: DropdownButtonFormField<int>(
+                    value: widget.mes,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'Mês', isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8)),
+                    items: List.generate(12, (i) => DropdownMenuItem(value: i + 1, child: Text(meses[i], overflow: TextOverflow.ellipsis))),
+                    onChanged: (v) => widget.onChangeMes(v!, widget.ano),
+                  ),
                 ),
-                onChanged: (_) => setState(() {}),
-              ),
+                const SizedBox(width: 6),
+                SizedBox(
+                  width: 88,
+                  child: DropdownButtonFormField<int>(
+                    value: widget.ano,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'Ano', isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8)),
+                    items: [anoAtual - 1, anoAtual, anoAtual + 1].map((y) => DropdownMenuItem(value: y, child: Text('$y'))).toList(),
+                    onChanged: (v) => widget.onChangeMes(widget.mes, v!),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                SizedBox(
+                  width: 148,
+                  child: DropdownButtonFormField<String?>(
+                    value: _turmaFiltroId,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'Turmas', isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8)),
+                    items: [
+                      const DropdownMenuItem(value: null, child: Text('Todas', overflow: TextOverflow.ellipsis)),
+                      ...widget.turmas.map((t) => DropdownMenuItem(
+                            value: t.id,
+                            child: Text(nomeTurmaCurto(t.nome), overflow: TextOverflow.ellipsis),
+                          )),
+                    ],
+                    onChanged: (v) => setState(() => _turmaFiltroId = v),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                SizedBox(
+                  width: 168,
+                  child: TextField(
+                    controller: _buscaCtrl,
+                    decoration: const InputDecoration(
+                      hintText: 'Buscar nome',
+                      prefixIcon: Icon(Icons.search, size: 18),
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+                if (_turmaFiltroId != null)
+                  IconButton(
+                    tooltip: 'Lembrete WhatsApp turma',
+                    onPressed: () => _lembreteTurma(context),
+                    icon: const Icon(Icons.groups, color: verdeEscuro),
+                    visualDensity: VisualDensity.compact,
+                  ),
+              ],
             ),
-            if (_turmaFiltroId != null)
-              IconButton(
-                tooltip: 'Lembrete WhatsApp turma',
-                onPressed: () => _lembreteTurma(context),
-                icon: const Icon(Icons.groups, color: verdeEscuro),
-              ),
-          ]),
-          const SizedBox(height: 4),
+          ),
+          const SizedBox(height: 6),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Text('R\$ ${widget.totalArrecadado.toStringAsFixed(2)}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.green)),
             Text('${widget.pendentes} pend.', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.orange)),

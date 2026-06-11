@@ -7,7 +7,6 @@ import '../../utils/image_utils.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
-import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/loja/loja_publica_url.dart';
@@ -139,6 +138,48 @@ class _LojaScreenState extends State<LojaScreen> {
     if (ok == true) { await _repo.deletar(p.id); _load(); }
   }
 
+  Future<void> _mostrarLinkLojaPublica() async {
+    final link = urlLojaPublica();
+    await Clipboard.setData(ClipboardData(text: link));
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset('assets/images/logo.png', width: 36, height: 36, fit: BoxFit.cover),
+            ),
+            const SizedBox(width: 10),
+            const Expanded(child: Text('Loja pública online')),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Compartilhe este link para vender para quem não é aluno da academia:'),
+            const SizedBox(height: 10),
+            SelectableText(link, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+            const SizedBox(height: 8),
+            Text('Link copiado para a área de transferência.', style: TextStyle(fontSize: 12, color: Colors.green.shade700)),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Fechar')),
+          FilledButton.icon(
+            onPressed: () {
+              Share.share('Loja SM BJJ — compre kimonos e produtos:\n$link');
+            },
+            icon: const Icon(Icons.share, size: 18),
+            label: const Text('Compartilhar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isAdmin = context.watch<AuthProvider>().isAdmin;
@@ -147,39 +188,17 @@ class _LojaScreenState extends State<LojaScreen> {
         title: const Text('Loja SM BJJ'),
         actions: [
           if (isAdmin)
+            TextButton.icon(
+              onPressed: _mostrarLinkLojaPublica,
+              icon: const Icon(Icons.public, size: 18),
+              label: const Text('Link loja'),
+              style: TextButton.styleFrom(foregroundColor: Colors.white),
+            ),
+          if (isAdmin)
             IconButton(
               icon: const Icon(Icons.link),
               tooltip: 'Link público da loja',
-              onPressed: () async {
-                final link = urlLojaPublica();
-                await Clipboard.setData(ClipboardData(text: link));
-                if (!context.mounted) return;
-                await showDialog<void>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('Loja pública'),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Compartilhe este link para vender para quem não é aluno:'),
-                        const SizedBox(height: 10),
-                        SelectableText(link, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
-                      ],
-                    ),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Fechar')),
-                      FilledButton.icon(
-                        onPressed: () {
-                          Share.share('Loja SM BJJ — compre kimonos e produtos:\n$link');
-                        },
-                        icon: const Icon(Icons.share, size: 18),
-                        label: const Text('Compartilhar'),
-                      ),
-                    ],
-                  ),
-                );
-              },
+              onPressed: _mostrarLinkLojaPublica,
             ),
           IconButton(
             icon: Icon(isAdmin ? Icons.list_alt : Icons.receipt_long_outlined),
@@ -203,6 +222,60 @@ class _LojaScreenState extends State<LojaScreen> {
         label: const Text('Novo Produto', style: TextStyle(color: Colors.white)),
       ) : null,
       body: Column(children: [
+        if (isAdmin)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            child: Material(
+              elevation: 2,
+              color: Colors.green.shade50,
+              borderRadius: BorderRadius.circular(14),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: _mostrarLinkLojaPublica,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: verdeEscuro.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.storefront_outlined, color: verdeEscuro, size: 26),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Link da loja pública',
+                              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: verdeEscuro),
+                            ),
+                            Text(
+                              'Venda online para visitantes — toque para copiar e compartilhar',
+                              style: TextStyle(fontSize: 11, color: Colors.grey.shade700, height: 1.3),
+                            ),
+                          ],
+                        ),
+                      ),
+                      FilledButton.icon(
+                        onPressed: _mostrarLinkLojaPublica,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: verdeEscuro,
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        icon: const Icon(Icons.link, size: 16),
+                        label: const Text('Copiar', style: TextStyle(fontSize: 12)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         // Filtros
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,

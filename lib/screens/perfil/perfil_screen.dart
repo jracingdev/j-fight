@@ -8,7 +8,8 @@ import '../../core/auth/biometric_auth_service.dart';
 import '../../core/backup/drive_backup.dart';
 import '../../core/app_version.dart';
 import '../../core/constants.dart';
-import '../../core/theme.dart';
+import '../../core/notifications/alert_preferences_service.dart';
+import '../../core/notifications/app_alert_service.dart';
 import '../../models/aluno.dart';
 import '../../models/mensalidade.dart';
 import '../../models/usuario.dart';
@@ -40,9 +41,25 @@ class _PerfilScreenState extends State<PerfilScreen> {
   bool _loading = true;
   bool _backupLoading = false;
   bool _fotoLoading = false;
+  bool _alertasSom = true;
+  bool _alertasVisual = true;
 
   @override
-  void initState() { super.initState(); _load(); }
+  void initState() {
+    super.initState();
+    _load();
+    _carregarPrefsAlertas();
+  }
+
+  Future<void> _carregarPrefsAlertas() async {
+    final prefs = AlertPreferencesService.instance;
+    final som = await prefs.alertasSomAtivos;
+    final visual = await prefs.alertasVisuaisAtivos;
+    if (mounted) setState(() {
+      _alertasSom = som;
+      _alertasVisual = visual;
+    });
+  }
 
   Future<void> _load() async {
     final auth = context.read<AuthProvider>();
@@ -306,6 +323,55 @@ class _PerfilScreenState extends State<PerfilScreen> {
                     ),
                   ],
                 ]),
+              ),
+              const SizedBox(height: 20),
+
+              const Text('Notificações', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+              const SizedBox(height: 10),
+              Card(
+                child: Column(
+                  children: [
+                    SwitchListTile(
+                      secondary: const Icon(Icons.volume_up_outlined, color: verdeEscuro),
+                      title: const Text('Alertas sonoros'),
+                      subtitle: const Text('Som ao receber avisos, medalhas ou pedidos na loja'),
+                      value: _alertasSom,
+                      activeThumbColor: verdeEscuro,
+                      onChanged: (v) async {
+                        await AlertPreferencesService.instance.setAlertasSomAtivos(v);
+                        if (mounted) setState(() => _alertasSom = v);
+                      },
+                    ),
+                    const Divider(height: 1),
+                    SwitchListTile(
+                      secondary: const Icon(Icons.notifications_active_outlined, color: verdeEscuro),
+                      title: const Text('Alertas visuais'),
+                      subtitle: const Text('Banner com logo da academia no topo da tela'),
+                      value: _alertasVisual,
+                      activeThumbColor: verdeEscuro,
+                      onChanged: (v) async {
+                        await AlertPreferencesService.instance.setAlertasVisuaisAtivos(v);
+                        if (mounted) setState(() => _alertasVisual = v);
+                      },
+                    ),
+                    if (_alertasSom || _alertasVisual)
+                      ListTile(
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.asset('assets/images/logo.png', width: 32, height: 32, fit: BoxFit.cover),
+                        ),
+                        title: const Text('Testar alerta'),
+                        subtitle: const Text('Ouve e vê como ficará a notificação'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => AppAlertService.alertar(
+                          context,
+                          titulo: 'CT SM BJJ',
+                          mensagem: 'Exemplo de alerta com som e logo da academia.',
+                          cor: verdeEscuro,
+                        ),
+                      ),
+                  ],
+                ),
               ),
               const SizedBox(height: 20),
 
