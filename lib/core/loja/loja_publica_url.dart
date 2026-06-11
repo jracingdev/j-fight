@@ -16,5 +16,7 @@ bool urlEhLojaPublica(Uri uri) {
 void sincronizarLojaPublicaDaUrl() {
   if (urlEhLojaPublica(currentLaunchUri)) {
     LojaPublicaPending.ativar();
+  } else {
+    LojaPublicaPending.desativar();
   }
 }
