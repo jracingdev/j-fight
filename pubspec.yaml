@@ -1,7 +1,7 @@
 name: ct_sm_bjj
 description: CT SM BJJ - Gestão de Academia de Jiu-Jitsu
 publish_to: 'none'
-version: 1.7.15+46
+version: 1.7.16+47
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -54,6 +54,7 @@ flutter_launcher_icons:
   image_path: assets/images/logo.png
   adaptive_icon_background: "#1a6b2a"
   adaptive_icon_foreground: assets/images/logo.png
+  adaptive_icon_foreground_inset: 0
   web:
     generate: true
     image_path: assets/images/logo.png
