@@ -6,8 +6,29 @@ class LegalTexts {
 
   static const termosTitulo = 'Termos e Condições de Uso';
   static const privacidadeTitulo = 'Política de Privacidade';
+  static const aptidaoTitulo = 'Termo de Aptidão Física e Responsabilidade';
 
   static String get dataAtualizacao => '11 de junho de 2026';
+
+  static String get aptidao => '''
+Última atualização: $dataAtualizacao
+
+Declaro que li e concordo com os termos abaixo:
+
+✓ Estou em condições físicas e de saúde adequadas para a prática de Jiu-Jitsu.
+
+✓ Declaro não possuir doença, lesão, limitação física ou qualquer condição médica pré-existente que impeça ou contraindique minha participação nos treinamentos.
+
+✓ Comprometo-me a informar imediatamente à equipe ou aos instrutores caso haja qualquer alteração em meu estado de saúde.
+
+✓ Tenho ciência de que a prática do Jiu-Jitsu envolve contato físico e riscos inerentes à atividade esportiva, incluindo quedas, contusões, torções e outras lesões.
+
+✓ Assumo total responsabilidade pelas informações prestadas e pela minha participação nas atividades, isentando a Marinho Team Jiu-Jitsu, seus professores e colaboradores de responsabilidade por problemas de saúde ou condições médicas não informadas previamente.
+
+✓ Declaro ser maior de 18 anos ou possuir autorização de meu responsável legal para participar das atividades.
+
+Ao marcar a opção "Li e Concordo" no cadastro, declaro que as informações acima são verdadeiras e que aceito integralmente os termos desta declaração. O sistema registra automaticamente seu nome, e-mail, data, hora e endereço IP do aceite para fins de comprovação.
+''';
 
   static String get termos => '''
 Última atualização: $dataAtualizacao
@@ -59,25 +80,8 @@ Aplica-se a legislação brasileira. Fica eleito o foro da comarca do Rio de Jan
 14. CONTATO
 Dúvidas sobre estes Termos: $developerEmail · WhatsApp $professorTelefoneExibicao.
 
----
-
-TERMO DE APTIDÃO FÍSICA E RESPONSABILIDADE
-
-Declaro que li e concordo com os termos abaixo:
-
-✓ Estou em condições físicas e de saúde adequadas para a prática de Jiu-Jitsu.
-
-✓ Declaro não possuir doença, lesão, limitação física ou qualquer condição médica pré-existente que impeça ou contraindique minha participação nos treinamentos.
-
-✓ Comprometo-me a informar imediatamente à equipe ou aos instrutores caso haja qualquer alteração em meu estado de saúde.
-
-✓ Tenho ciência de que a prática do Jiu-Jitsu envolve contato físico e riscos inerentes à atividade esportiva, incluindo quedas, contusões, torções e outras lesões.
-
-✓ Assumo total responsabilidade pelas informações prestadas e pela minha participação nas atividades, isentando a Marinho Team Jiu-Jitsu, seus professores e colaboradores de responsabilidade por problemas de saúde ou condições médicas não informadas previamente.
-
-✓ Declaro ser maior de 18 anos ou possuir autorização de meu responsável legal para participar das atividades.
-
-Ao marcar a opção "Li e Concordo" no cadastro, declaro que as informações acima são verdadeiras e que aceito integralmente os termos desta declaração. O sistema registra automaticamente seu nome, e-mail, data, hora e endereço IP do aceite para fins de comprovação.
+15. APTIDÃO FÍSICA
+A participação nos treinos exige aceite do Termo de Aptidão Física e Responsabilidade, disponível separadamente no App (login, cadastro e Sobre).
 ''';
 
   static String get privacidade => '''

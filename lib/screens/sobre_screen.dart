@@ -83,21 +83,7 @@ class SobreScreen extends StatelessWidget {
               const Text('Documentos legais', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
             ]),
             const Divider(height: 20),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.description_outlined, color: verdeEscuro),
-              title: const Text('Termos e Condições de Uso'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => LegalDocumentScreen.abrir(context, LegalDoc.termos),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.privacy_tip_outlined, color: verdeEscuro),
-              title: const Text('Política de Privacidade'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => LegalDocumentScreen.abrir(context, LegalDoc.privacidade),
-            ),
+            const LegalDocumentLinks(),
           ])),
 
           const SizedBox(height: 16),

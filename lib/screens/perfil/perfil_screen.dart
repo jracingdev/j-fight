@@ -524,6 +524,15 @@ class _PerfilScreenState extends State<PerfilScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 tileColor: Colors.white,
               ),
+              const SizedBox(height: 8),
+              ListTile(
+                onTap: () => LegalDocumentScreen.abrir(context, LegalDoc.aptidao),
+                leading: const Icon(Icons.health_and_safety_outlined, color: verdeEscuro),
+                title: const Text('Termo de Aptidão Física'),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                tileColor: Colors.white,
+              ),
               const SizedBox(height: 20),
             ]),
     );

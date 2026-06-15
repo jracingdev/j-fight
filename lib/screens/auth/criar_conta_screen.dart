@@ -325,18 +325,20 @@ class _CriarContaScreenState extends State<CriarContaScreen> {
                         onTap: _loading ? null : () => setState(() => _aceitouAptidao = !_aceitouAptidao),
                         child: Padding(
                           padding: const EdgeInsets.only(top: 12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
-                              const Text(
-                                'Li e Concordo — Aptidão Física',
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: verdeEscuro),
+                              Text('Li e Concordo — ', style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
+                              GestureDetector(
+                                onTap: () => LegalDocumentScreen.abrir(context, LegalDoc.aptidao),
+                                child: const Text(
+                                  'Termo de Aptidão Física',
+                                  style: TextStyle(fontSize: 12, color: verdeEscuro, fontWeight: FontWeight.w700),
+                                ),
                               ),
-                              const SizedBox(height: 4),
                               Text(
-                                'Declaro aptidão para Jiu-Jitsu, assumo os riscos da prática e isento a Marinho Team Jiu-Jitsu. '
-                                'Sou maior de 18 anos ou tenho autorização do responsável legal. '
-                                'Detalhes no Termo de Aptidão dentro dos Termos de Uso.',
+                                ' — declaro aptidão para Jiu-Jitsu, assumo os riscos da prática e isento a Marinho Team Jiu-Jitsu. '
+                                'Sou maior de 18 anos ou tenho autorização do responsável legal.',
                                 style: TextStyle(fontSize: 11, color: Colors.grey.shade700, height: 1.35),
                               ),
                             ],

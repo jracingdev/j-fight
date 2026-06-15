@@ -631,6 +631,21 @@ class _LoginScreenState extends State<LoginScreen> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
+                      const SizedBox(height: 12),
+                      const Divider(),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.gavel_outlined, size: 18, color: Colors.grey.shade700),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Documentos legais',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.grey.shade800),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      const LegalDocumentLinks(dense: true),
                       const SizedBox(height: 8),
                       TextButton(
                         onPressed: _loading
@@ -648,10 +663,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                LegalLinksRow(
-                  style: const TextStyle(fontSize: 11, color: Colors.white70, decoration: TextDecoration.underline),
-                ),
-                const SizedBox(height: 12),
                 const Text(
                   'SM BJJ © 2018 · Todos os direitos reservados',
                   style: TextStyle(color: Colors.white38, fontSize: 11),

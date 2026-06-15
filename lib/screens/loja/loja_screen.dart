@@ -537,11 +537,29 @@ class _SolicitarSheetState extends State<_SolicitarSheet> {
         Text('Solicitar: ${p.nome}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
         Text('R\$ ${p.preco.toStringAsFixed(2)} / unidade', style: TextStyle(color: Colors.grey.shade600)),
         const SizedBox(height: 12),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: SizedBox(
-            height: 140,
-            child: _ProdutoImagem(fotoUrl: p.fotoUrl, youtubeThumb: p.youtubeThumbnail, priorizarVideo: p.temVideoYouTube),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => ProdutoImagemAmpliada.mostrarProduto(context, p),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: SizedBox(
+              height: 140,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  _ProdutoImagem(fotoUrl: p.fotoUrl, youtubeThumb: p.youtubeThumbnail, priorizarVideo: p.temVideoYouTube),
+                  Positioned(
+                    right: 8,
+                    bottom: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
+                      child: const Icon(Icons.zoom_in, color: Colors.white, size: 16),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -676,9 +694,7 @@ class _ProdutoCard extends StatelessWidget {
       margin: EdgeInsets.zero,
       child: Opacity(
         opacity: produto.ativo ? 1.0 : 0.55,
-        child: InkWell(
-          onTap: !isAdmin ? onSolicitar : null,
-          child: Column(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             AspectRatio(
@@ -687,19 +703,27 @@ class _ProdutoCard extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   GestureDetector(
-                    onTap: () => ProdutoImagemAmpliada.mostrar(
-                      context,
-                      titulo: produto.nome,
-                      fotoUrl: produto.fotoUrl,
-                      youtubeThumb: produto.youtubeThumbnail,
-                      priorizarVideo: produto.temVideoYouTube,
-                    ),
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => ProdutoImagemAmpliada.mostrarProduto(context, produto),
                     child: _ProdutoImagem(
                       fotoUrl: produto.fotoUrl,
                       youtubeThumb: produto.youtubeThumbnail,
                       priorizarVideo: produto.temVideoYouTube,
                     ),
                   ),
+                  if (!isAdmin)
+                    Positioned(
+                      right: 6,
+                      bottom: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.zoom_in, color: Colors.white, size: 16),
+                      ),
+                    ),
                   if (isAdmin && !produto.ativo)
                     Positioned(
                       top: 8,
@@ -728,7 +752,11 @@ class _ProdutoCard extends StatelessWidget {
                 ],
               ),
             ),
-            Padding(
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: !isAdmin ? onSolicitar : null,
+                child: Padding(
               padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -815,8 +843,9 @@ class _ProdutoCard extends StatelessWidget {
                 ],
               ),
             ),
+              ),
+            ),
           ],
-        ),
         ),
       ),
     );
