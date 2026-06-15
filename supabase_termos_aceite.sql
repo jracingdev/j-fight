@@ -25,11 +25,6 @@ create policy "Usuario registra proprio aceite" on public.termos_aceites
 drop policy if exists "Admin le aceites" on public.termos_aceites;
 create policy "Admin le aceites" on public.termos_aceites
   for select
-  using (
-    exists (
-      select 1 from public.usuarios u
-      where u.id = auth.uid() and u.tipo = 'admin'
-    )
-  );
+  using (public.is_admin());
 
 select 'Tabela termos_aceites criada!' as status;

@@ -450,7 +450,23 @@ class _LoginScreenState extends State<LoginScreen> {
             padding: const EdgeInsets.all(24),
             child: Column(
               children: [
-                const SizedBox(height: 24),
+                if (Navigator.canPop(context))
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: _loading ? null : () => Navigator.pop(context),
+                      icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                      label: const Text(
+                        'Voltar para a loja',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 8),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(50),
                   child: Image.asset(
