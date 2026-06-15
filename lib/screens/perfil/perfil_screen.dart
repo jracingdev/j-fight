@@ -264,7 +264,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: verdeEscuro))
-          : ListView(padding: ScrollBottomPadding.all(context, extra: 24), children: [
+          : ListView(padding: ScrollBottomPadding.all(context, extra: 24, includeNavBar: true), children: [
               // Header
               Container(
                 padding: const EdgeInsets.all(20),
@@ -292,6 +292,8 @@ class _PerfilScreenState extends State<PerfilScreen> {
                   const SizedBox(height: 12),
                   Text(user?.nome ?? '', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white)),
                   Text(user?.email ?? '', style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                  const SizedBox(height: 4),
+                  Text(AppVersion.label, style: const TextStyle(color: Colors.white54, fontSize: 11)),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -326,6 +328,26 @@ class _PerfilScreenState extends State<PerfilScreen> {
                     ),
                   ],
                 ]),
+              ),
+              const SizedBox(height: 20),
+
+              const Text('Documentos legais', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+              const SizedBox(height: 10),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Termos de uso, privacidade e aptidão física',
+                        style: TextStyle(fontSize: 13, color: Colors.grey.shade700, height: 1.35),
+                      ),
+                      const SizedBox(height: 12),
+                      const LegalDocumentLinks(),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 20),
 
@@ -493,26 +515,6 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
               const _BiometricSettingsCard(),
               const SizedBox(height: 20),
-
-              const Text('Documentos legais', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-              const SizedBox(height: 10),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'Termos de uso, privacidade e aptidão física',
-                        style: TextStyle(fontSize: 13, color: Colors.grey.shade700, height: 1.35),
-                      ),
-                      const SizedBox(height: 12),
-                      const LegalDocumentLinks(),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
 
               // ── Sobre o App ───────────────────────
               ListTile(

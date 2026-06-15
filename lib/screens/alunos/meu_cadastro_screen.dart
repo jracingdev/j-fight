@@ -238,8 +238,11 @@ class _MeuCadastroScreenState extends State<MeuCadastroScreen> {
         title: Text(widget.editar ? 'Meu Cadastro' : 'Cadastro na Academia'),
         automaticallyImplyLeading: podeVoltar,
       ),
-      body: SingleChildScrollView(
-        padding: ScrollBottomPadding.all(context, extra: 24),
+      body: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.only(bottom: 16),
+        child: SingleChildScrollView(
+        padding: ScrollBottomPadding.all(context, extra: 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -403,6 +406,7 @@ class _MeuCadastroScreenState extends State<MeuCadastroScreen> {
             ),
           ],
         ),
+      ),
       ),
     ),
     );

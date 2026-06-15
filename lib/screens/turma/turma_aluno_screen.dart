@@ -118,7 +118,7 @@ class _TurmaAlunoScreenState extends State<TurmaAlunoScreen> {
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
-                padding: ScrollBottomPadding.all(context, extra: 24),
+                padding: ScrollBottomPadding.all(context, extra: 24, includeNavBar: true),
                 children: [
                   if (_mostrarAniversario && _aniversariantes.isNotEmpty)
                     Padding(

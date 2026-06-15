@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/produto.dart';
 import 'produto_imagem.dart';
 
-/// Área de imagem com overlay de toque confiável (Android / grid / bottom sheet).
+/// Área de imagem com toque confiável para ampliar (grid, bottom sheet, loja pública).
 class ProdutoImagemComZoom extends StatelessWidget {
   final Produto produto;
   final BoxFit fit;
@@ -15,27 +15,25 @@ class ProdutoImagemComZoom extends StatelessWidget {
     this.padding = EdgeInsets.zero,
   });
 
-  void _abrir(BuildContext context) {
-    ProdutoImagemAmpliada.mostrarProduto(context, produto);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Stack(
       fit: StackFit.expand,
       children: [
-        ProdutoImagem(
-          fotoUrl: produto.fotoUrl,
-          youtubeThumb: produto.youtubeThumbnail,
-          priorizarVideo: produto.temVideoYouTube,
-          fit: fit,
-          padding: padding,
+        IgnorePointer(
+          child: ProdutoImagem(
+            fotoUrl: produto.fotoUrl,
+            youtubeThumb: produto.youtubeThumbnail,
+            priorizarVideo: produto.temVideoYouTube,
+            fit: fit,
+            padding: padding,
+          ),
         ),
         Positioned.fill(
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: () => _abrir(context),
+              onTap: () => ProdutoImagemAmpliada.mostrarProduto(context, produto),
               splashColor: Colors.white24,
               highlightColor: Colors.white10,
             ),
@@ -48,7 +46,7 @@ class ProdutoImagemComZoom extends StatelessWidget {
             color: Colors.black54,
             borderRadius: BorderRadius.circular(8),
             child: InkWell(
-              onTap: () => _abrir(context),
+              onTap: () => ProdutoImagemAmpliada.mostrarProduto(context, produto),
               borderRadius: BorderRadius.circular(8),
               customBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               child: const Padding(
@@ -74,12 +72,48 @@ class ProdutoImagemAmpliada {
     String? youtubeThumb,
     bool priorizarVideo = false,
   }) {
-    return showDialog<void>(
-      context: context,
-      useRootNavigator: true,
-      barrierColor: Colors.black87,
-      builder: (ctx) => Dialog.fullscreen(
-        backgroundColor: Colors.black,
+    return Navigator.of(context, rootNavigator: true).push<void>(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (ctx) => _ProdutoZoomPage(
+          titulo: titulo,
+          fotoUrl: fotoUrl,
+          youtubeThumb: youtubeThumb,
+          priorizarVideo: priorizarVideo,
+        ),
+      ),
+    );
+  }
+
+  static Future<void> mostrarProduto(BuildContext context, Produto p) {
+    return mostrar(
+      context,
+      titulo: p.nome,
+      fotoUrl: p.fotoUrl,
+      youtubeThumb: p.youtubeThumbnail,
+      priorizarVideo: p.temVideoYouTube,
+    );
+  }
+}
+
+class _ProdutoZoomPage extends StatelessWidget {
+  final String titulo;
+  final String? fotoUrl;
+  final String? youtubeThumb;
+  final bool priorizarVideo;
+
+  const _ProdutoZoomPage({
+    required this.titulo,
+    this.fotoUrl,
+    this.youtubeThumb,
+    this.priorizarVideo = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
         child: Stack(
           children: [
             InteractiveViewer(
@@ -96,40 +130,36 @@ class ProdutoImagemAmpliada {
                 ),
               ),
             ),
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        titulo,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Material(
+                color: Colors.black54,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () => Navigator.pop(ctx),
-                    ),
-                  ],
+                      Expanded(
+                        child: Text(
+                          titulo,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  static void mostrarProduto(BuildContext context, Produto p) {
-    mostrar(
-      context,
-      titulo: p.nome,
-      fotoUrl: p.fotoUrl,
-      youtubeThumb: p.youtubeThumbnail,
-      priorizarVideo: p.temVideoYouTube,
     );
   }
 }

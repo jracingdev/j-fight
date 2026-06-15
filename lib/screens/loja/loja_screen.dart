@@ -26,6 +26,7 @@ import '../../models/produto_variante.dart';
 import '../../utils/date_utils.dart';
 import '../../utils/loja_tamanhos.dart';
 import '../../utils/scroll_padding.dart';
+import '../legal/legal_document_screen.dart';
 import 'pedidos_admin_screen.dart';
 import 'meus_pedidos_screen.dart';
 
@@ -182,6 +183,27 @@ class _LojaScreenState extends State<LojaScreen> {
     );
   }
 
+  void _abrirDocumentosLegais() {
+    showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text('Documentos legais', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+            const SizedBox(height: 8),
+            const LegalDocumentLinks(),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isAdmin = context.watch<AuthProvider>().isAdmin;
@@ -189,6 +211,12 @@ class _LojaScreenState extends State<LojaScreen> {
       appBar: AppBar(
         title: const Text('Loja SM BJJ'),
         actions: [
+          if (!isAdmin)
+            IconButton(
+              icon: const Icon(Icons.gavel_outlined),
+              tooltip: 'Termos e privacidade',
+              onPressed: _abrirDocumentosLegais,
+            ),
           if (isAdmin)
             TextButton.icon(
               onPressed: _mostrarLinkLojaPublica,
@@ -314,10 +342,10 @@ class _LojaScreenState extends State<LojaScreen> {
               : _filtrados.isEmpty
                   ? Center(child: Text('Nenhum produto encontrado.', style: TextStyle(color: Colors.grey.shade500)))
                   : GridView.builder(
-                      padding: EdgeInsets.fromLTRB(12, 0, 12, ScrollBottomPadding.bottom(context, extra: 24)),
+                      padding: EdgeInsets.fromLTRB(12, 0, 12, ScrollBottomPadding.bottom(context, extra: 24, includeNavBar: true)),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: isAdmin ? 1 : 2,
-                        childAspectRatio: isAdmin ? _aspectRatioAdmin(_filtrados) : 0.54,
+                        childAspectRatio: isAdmin ? _aspectRatioAdmin(_filtrados) : 0.50,
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
                       ),
