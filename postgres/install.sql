@@ -53,6 +53,15 @@ CREATE TABLE IF NOT EXISTS alunos (
   data_inicio_aulas TEXT,
   iniciante BOOLEAN DEFAULT false,
   pro_rata_primeiro_mes BOOLEAN DEFAULT false,
+  bolsista BOOLEAN DEFAULT false,
+  percentual_bolsa NUMERIC DEFAULT 0,
+  grupo_familiar TEXT,
+  cpf_pagante TEXT,
+  cobranca_ativa BOOLEAN DEFAULT true,
+  data_inicio_cobranca TEXT,
+  data_interrupcao_cobranca TEXT,
+  justificativa_interrupcao TEXT,
+  valor_mensalidade_custom NUMERIC,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -73,12 +82,17 @@ CREATE TABLE IF NOT EXISTS mensalidades (
   status TEXT DEFAULT 'pendente' CHECK (status IN ('pendente', 'pago', 'atrasado')),
   data_pagamento TEXT,
   observacao TEXT,
+  valor_base NUMERIC,
   cancelada BOOLEAN DEFAULT false,
   pro_rata BOOLEAN DEFAULT false,
   mp_preferencia_id TEXT,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS mensalidades_aluno_mes_ano_uidx
+  ON mensalidades (aluno_id, mes, ano)
+  WHERE (cancelada = false OR cancelada IS NULL);
 
 -- ── Turmas ───────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS turmas (
@@ -134,9 +148,14 @@ CREATE TABLE IF NOT EXISTS presenca_tokens (
 CREATE TABLE IF NOT EXISTS produtos (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   nome TEXT NOT NULL,
+  categoria TEXT DEFAULT 'kimono',
   descricao TEXT,
   preco NUMERIC NOT NULL,
   foto_url TEXT,
+  youtube_url TEXT,
+  prazo_entrega TEXT DEFAULT 'imediato',
+  prazo_dias INTEGER DEFAULT 0,
+  prazo_data TEXT,
   ativo BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT now()
 );
@@ -182,7 +201,10 @@ CREATE TABLE IF NOT EXISTS pedidos (
 CREATE TABLE IF NOT EXISTS avisos (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   titulo TEXT NOT NULL,
-  conteudo TEXT,
+  conteudo TEXT NOT NULL DEFAULT '',
+  tipo TEXT DEFAULT 'info',
+  link_url TEXT,
+  fonte TEXT,
   ativo BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT now()
 );
@@ -190,18 +212,24 @@ CREATE TABLE IF NOT EXISTS avisos (
 CREATE TABLE IF NOT EXISTS eventos (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   titulo TEXT NOT NULL,
+  data TEXT NOT NULL,
+  tipo TEXT DEFAULT 'campeonato',
   descricao TEXT,
-  data_evento TEXT,
   local TEXT,
-  ativo BOOLEAN DEFAULT true,
+  organizador TEXT,
+  link_url TEXT,
+  hora_inicio TEXT,
+  hora_fim TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS medalhas (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  nome TEXT NOT NULL,
-  descricao TEXT,
-  icone TEXT,
+  aluno_id UUID REFERENCES alunos(id) ON DELETE CASCADE,
+  aluno_nome TEXT NOT NULL,
+  titulo TEXT NOT NULL,
+  tipo TEXT DEFAULT 'ouro' CHECK (tipo IN ('ouro', 'prata', 'bronze', 'outro')),
+  data_conquista TEXT,
   ativo BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT now()
 );
@@ -209,14 +237,34 @@ CREATE TABLE IF NOT EXISTS medalhas (
 -- ── Financeiro ───────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS financeiro_config (
   id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-  valor_mensalidade_padrao NUMERIC,
-  dia_vencimento_padrao INTEGER DEFAULT 10,
+  valor_adulto NUMERIC NOT NULL DEFAULT 110,
+  valor_menor NUMERIC NOT NULL DEFAULT 80,
+  desconto_2o_familiar_percent NUMERIC NOT NULL DEFAULT 10,
+  desconto_3o_familiar_percent NUMERIC NOT NULL DEFAULT 15,
+  desconto_mesmo_pagante_percent NUMERIC NOT NULL DEFAULT 5,
+  dia_vencimento INTEGER NOT NULL DEFAULT 10,
+  regras_extras JSONB NOT NULL DEFAULT '[]'::jsonb,
+  pro_rata_ativo BOOLEAN DEFAULT true,
   mp_access_token TEXT,
-  regras JSONB,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 INSERT INTO financeiro_config (id) VALUES (1) ON CONFLICT DO NOTHING;
+
+-- Turmas padrão (necessárias para supabase_demo_data.sql)
+INSERT INTO turmas (nome, horario, tipo, dias_semana)
+SELECT v.nome, v.horario, v.tipo, v.dias_semana
+FROM (VALUES
+  ('Turma Mista Manhã'::text, '07:30'::text, 'mista'::text, '{}'::text[]),
+  ('Turma Mista Noite', '20:00', 'mista', '{}'),
+  ('Turma Baby', '18:00', 'baby', '{}'),
+  ('Turma Infantil', '19:00', 'infantil', '{}'),
+  ('Turma Kids', '18:00', 'kids', '{}'),
+  ('Turma Kids Avançado', '18:40', 'kids', '{}')
+) AS v(nome, horario, tipo, dias_semana)
+WHERE NOT EXISTS (
+  SELECT 1 FROM turmas t WHERE t.nome = v.nome AND t.horario = v.horario
+);
 
 -- ── Termos ───────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS termos_aceites (

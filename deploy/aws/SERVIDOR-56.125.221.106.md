@@ -52,10 +52,19 @@ Resposta esperada: `{"ok":true,"app":"jfight-api"}`
 
 ## 5. Dados demo (opcional)
 
+Se o `install.sql` foi aplicado antes desta correção, rode primeiro:
+
 ```bash
 export PGPASSWORD='EscolhaUmaSenhaForte!'
-psql "postgresql://jfight:$PGPASSWORD@localhost:5432/jfight" -f supabase_demo_data.sql
-psql "postgresql://jfight:$PGPASSWORD@localhost:5432/jfight" -f supabase_loja_catalogo.sql
+psql -h 127.0.0.1 -p 5432 -U jfight -d jfight -f postgres/migrate_demo_schema.sql
+```
+
+Depois:
+
+```bash
+export PGPASSWORD='EscolhaUmaSenhaForte!'
+psql -h 127.0.0.1 -p 5432 -U jfight -d jfight -f supabase_demo_data.sql
+psql -h 127.0.0.1 -p 5432 -U jfight -d jfight -f supabase_loja_catalogo.sql
 ```
 
 ## 6. Build APK apontando para seu IP

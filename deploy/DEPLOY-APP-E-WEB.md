@@ -170,10 +170,17 @@ sudo certbot --nginx -d api.jracing.dev.br
 
 > **Onde:** terminal no servidor
 
+Se o schema veio de uma versão antiga do `install.sql`, alinhe as colunas antes:
+
 ```bash
 export PGPASSWORD='SuaSenhaForte123!'
-psql "postgresql://jfight:$PGPASSWORD@localhost:5432/jfight" -f /opt/jfight/supabase_demo_data.sql
-psql "postgresql://jfight:$PGPASSWORD@localhost:5432/jfight" -f /opt/jfight/supabase_loja_catalogo.sql
+psql -h 127.0.0.1 -p 5432 -U jfight -d jfight -f /opt/jfight/postgres/migrate_demo_schema.sql
+```
+
+```bash
+export PGPASSWORD='SuaSenhaForte123!'
+psql -h 127.0.0.1 -p 5432 -U jfight -d jfight -f /opt/jfight/supabase_demo_data.sql
+psql -h 127.0.0.1 -p 5432 -U jfight -d jfight -f /opt/jfight/supabase_loja_catalogo.sql
 ```
 
 Login admin: **admin@jfight.app** / **Demo@2026**
@@ -355,7 +362,7 @@ cd /opt/jfight && git pull && cd api && npm install && pm2 restart jfight-api
 | Mixed Content no console | API sem SSL | Certificado no Nginx |
 | Connection refused | API parada ou porta fechada | `pm2 status`, Security Group |
 | 401 / token | Relogar no app | Logout e login de novo |
-| Postgres error | Schema não aplicado | `postgres/install.sql` |
+| Postgres error | Schema não aplicado ou desatualizado | `postgres/install.sql` e, se necessário, `postgres/migrate_demo_schema.sql` |
 
 ---
 
