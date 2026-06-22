@@ -64,3 +64,15 @@ https://api.seudominio.com.br/api/v1/webhooks/mercadopago
 ## Migração do Supabase
 
 Se já tinha dados no Supabase, exporte com `pg_dump` das tabelas `public.*` e importe no Postgres do servidor. A tabela `auth.users` vira `auth_accounts` + `usuarios` — recrie contas ou importe com hash bcrypt.
+
+## Deploy na AWS (EC2)
+
+Guia completo com script automatizado: **[deploy/aws/README.md](deploy/aws/README.md)**
+
+```bash
+# No servidor Ubuntu, após git clone:
+export JFIGHT_DB_PASSWORD='...'
+export JFIGHT_PUBLIC_URL='https://api.seudominio.com.br'
+export JFIGHT_JWT_SECRET="$(openssl rand -hex 32)"
+./deploy/aws/setup.sh
+```
