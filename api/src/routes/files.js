@@ -4,8 +4,10 @@ import path from 'path';
 import fs from 'fs';
 import { config } from '../config.js';
 import { requireAuth } from '../lib/acl.js';
+import { authMiddleware } from '../middleware.js';
 
 const router = Router();
+router.use(authMiddleware);
 const fotosDir = path.join(config.uploadDir, 'fotos');
 fs.mkdirSync(fotosDir, { recursive: true });
 

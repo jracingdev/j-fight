@@ -1,3 +1,5 @@
+import '../utils/api_num_utils.dart';
+
 class Pedido {
   final String id;
   // Comprador
@@ -90,9 +92,9 @@ class Pedido {
         produtoNome: m['produto_nome'] ?? '',
         varianteCor: m['variante_cor'],
         varianteTamanho: m['variante_tamanho'],
-        quantidade: m['quantidade'] ?? 1,
-        valorUnitario: (m['valor_unitario'] as num?)?.toDouble() ?? 0,
-        valorTotal: (m['valor_total'] as num?)?.toDouble() ?? 0,
+        quantidade: apiToInt(m['quantidade'], 1),
+        valorUnitario: apiToDouble(m['valor_unitario']),
+        valorTotal: apiToDouble(m['valor_total']),
         status: m['status'] ?? 'pendente',
         formaPagamento: m['forma_pagamento'] ?? 'whatsapp',
         linkPagamento: m['link_pagamento'],

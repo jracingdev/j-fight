@@ -1,3 +1,4 @@
+import '../utils/api_num_utils.dart';
 import 'regra_financeira.dart';
 
 class FinanceiroConfig {
@@ -34,12 +35,12 @@ class FinanceiroConfig {
   factory FinanceiroConfig.fromMap(Map<String, dynamic>? m) {
     if (m == null) return const FinanceiroConfig();
     return FinanceiroConfig(
-      valorAdulto: (m['valor_adulto'] as num?)?.toDouble() ?? 110,
-      valorMenor: (m['valor_menor'] as num?)?.toDouble() ?? 80,
-      desconto2oFamiliarPercent: (m['desconto_2o_familiar_percent'] as num?)?.toDouble() ?? 10,
-      desconto3oFamiliarPercent: (m['desconto_3o_familiar_percent'] as num?)?.toDouble() ?? 15,
-      descontoMesmoPagantePercent: (m['desconto_mesmo_pagante_percent'] as num?)?.toDouble() ?? 5,
-      diaVencimento: m['dia_vencimento'] as int? ?? 10,
+      valorAdulto: apiToDouble(m['valor_adulto'], 110),
+      valorMenor: apiToDouble(m['valor_menor'], 80),
+      desconto2oFamiliarPercent: apiToDouble(m['desconto_2o_familiar_percent'], 10),
+      desconto3oFamiliarPercent: apiToDouble(m['desconto_3o_familiar_percent'], 15),
+      descontoMesmoPagantePercent: apiToDouble(m['desconto_mesmo_pagante_percent'], 5),
+      diaVencimento: apiToInt(m['dia_vencimento'], 10),
       regrasExtras: _parseRegras(m['regras_extras']),
       proRataAtivo: m['pro_rata_ativo'] as bool? ?? true,
     );

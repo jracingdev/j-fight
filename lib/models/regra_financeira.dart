@@ -1,3 +1,5 @@
+import '../utils/api_num_utils.dart';
+
 class RegraFinanceira {
   final String id;
   final String titulo;
@@ -20,7 +22,7 @@ class RegraFinanceira {
         id: m['id']?.toString() ?? '',
         titulo: m['titulo'] as String? ?? '',
         tipo: m['tipo'] as String? ?? 'texto',
-        valor: (m['valor'] as num?)?.toDouble() ?? 0,
+        valor: apiToDouble(m['valor']),
         descricao: m['descricao'] as String?,
         ativa: m['ativa'] != false,
       );

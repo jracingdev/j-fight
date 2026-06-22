@@ -1,3 +1,5 @@
+import '../utils/api_num_utils.dart';
+
 class ProdutoVariante {
   final String id;
   final String produtoId;
@@ -18,7 +20,7 @@ class ProdutoVariante {
         produtoId: m['produto_id'],
         cor: m['cor'],
         tamanho: m['tamanho'],
-        estoque: m['estoque'] ?? 0,
+        estoque: apiToInt(m['estoque']),
       );
 
   Map<String, dynamic> toMap() => {

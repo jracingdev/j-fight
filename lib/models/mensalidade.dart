@@ -1,3 +1,5 @@
+import '../utils/api_num_utils.dart';
+
 class Mensalidade {
   final String id;
   final String alunoId;
@@ -35,10 +37,10 @@ class Mensalidade {
         id: m['id'],
         alunoId: m['aluno_id'],
         alunoNome: m['aluno_nome'],
-        mes: m['mes'],
-        ano: m['ano'],
-        valor: (m['valor'] as num).toDouble(),
-        valorBase: (m['valor_base'] as num?)?.toDouble(),
+        mes: apiToInt(m['mes']),
+        ano: apiToInt(m['ano']),
+        valor: apiToDouble(m['valor']),
+        valorBase: apiToDoubleOrNull(m['valor_base']),
         status: m['status'] ?? 'pendente',
         dataPagamento: m['data_pagamento'],
         observacao: m['observacao'],

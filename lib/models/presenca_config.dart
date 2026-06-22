@@ -1,3 +1,5 @@
+import '../utils/api_num_utils.dart';
+
 enum MetodoPresenca {
   chamada,
   qrTurma,
@@ -39,7 +41,7 @@ class PresencaConfig {
 
   factory PresencaConfig.fromMap(Map<String, dynamic> m) => PresencaConfig(
         metodo: MetodoPresenca.fromDb(m['metodo'] as String?),
-        tokenValidadeMinutos: (m['token_validade_minutos'] as num?)?.toInt() ?? 30,
+        tokenValidadeMinutos: apiToInt(m['token_validade_minutos'], 30),
       );
 
   Map<String, dynamic> toMap() => {

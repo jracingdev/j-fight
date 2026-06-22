@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../core/api/api_client.dart';
 import '../core/auth/auth_provider.dart';
 import '../core/theme.dart';
 import 'dashboard/dashboard_screen.dart';
@@ -48,7 +49,9 @@ class _MainScreenState extends State<MainScreen> {
 
   Future<void> _verificarPedidosAdmin() async {
     if (!mounted) return;
-    if (!context.read<AuthProvider>().isAdmin) return;
+    final auth = context.read<AuthProvider>();
+    if (!auth.isAdmin || !auth.autenticado) return;
+    if (ApiClient.instance.token == null) return;
     try {
       final pedidos = await PedidoRepository().listar(status: 'pendente');
       final prefs = await SharedPreferences.getInstance();

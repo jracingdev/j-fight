@@ -1,4 +1,5 @@
-﻿import '../utils/date_utils.dart';
+﻿import '../utils/api_num_utils.dart';
+import '../utils/date_utils.dart';
 
 class Produto {
   final String id;
@@ -69,11 +70,11 @@ class Produto {
         nome: m['nome'],
         categoria: m['categoria'] ?? 'kimono',
         descricao: m['descricao'],
-        preco: (m['preco'] as num).toDouble(),
+        preco: apiToDouble(m['preco']),
         fotoUrl: m['foto_url'],
         youtubeUrl: m['youtube_url'],
         prazoEntrega: m['prazo_entrega'] ?? 'imediato',
-        prazoDias: m['prazo_dias'] ?? 0,
+        prazoDias: apiToInt(m['prazo_dias']),
         prazoData: m['prazo_data'],
         ativo: (m['ativo'] is bool ? m['ativo'] : (m['ativo'] ?? 1) == 1),
         createdAt: m['created_at'],

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Logo J FIGHT (versão dark) — assets/images/logo.png
+/// Logo J FIGHT (versão dark) — assets/images/logo.png (fonte: logo dark LOGO J FIGHT.png)
 class JFightLogoImage extends StatelessWidget {
   final double height;
   final double? width;

@@ -15,7 +15,7 @@ Copy-Item -Recurse -Force "build\web\*" $deployDir
 
 Push-Location $deployDir
 git init | Out-Null
-git checkout -b gh-pages 2>$null
+git checkout -b gh-pages 2>$null | Out-Null
 git add -A
 git commit -m "Deploy GitHub Pages $(Get-Date -Format 'yyyy-MM-dd HH:mm')" | Out-Null
 

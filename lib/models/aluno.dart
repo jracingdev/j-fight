@@ -1,4 +1,6 @@
-﻿class Aluno {
+﻿import '../utils/api_num_utils.dart';
+
+class Aluno {
   final String id;
   final String nome;
   final String? email;
@@ -93,8 +95,8 @@
         estado: m['estado'],
         cep: m['cep'],
         faixa: m['faixa'] ?? 'branca',
-        grau: m['grau'] ?? 0,
-        peso: m['peso']?.toDouble(),
+        grau: apiToInt(m['grau']),
+        peso: apiToDoubleOrNull(m['peso']),
         fotoUrl: m['foto_url'],
         ativo: (m['ativo'] is bool ? m['ativo'] : (m['ativo'] ?? 1) == 1),
         cadastroValidado: (m['cadastro_validado'] is bool
@@ -102,14 +104,14 @@
             : (m['cadastro_validado'] ?? 0) == 1),
         createdAt: m['created_at'],
         bolsista: m['bolsista'] == true,
-        percentualBolsa: (m['percentual_bolsa'] as num?)?.toDouble() ?? 0,
+        percentualBolsa: apiToDouble(m['percentual_bolsa']),
         grupoFamiliar: m['grupo_familiar'] as String?,
         cpfPagante: m['cpf_pagante'] as String?,
         cobrancaAtiva: m['cobranca_ativa'] != false,
         dataInicioCobranca: m['data_inicio_cobranca'] as String?,
         dataInterrupcaoCobranca: m['data_interrupcao_cobranca'] as String?,
         justificativaInterrupcao: m['justificativa_interrupcao'] as String?,
-        valorMensalidadeCustom: (m['valor_mensalidade_custom'] as num?)?.toDouble(),
+        valorMensalidadeCustom: apiToDoubleOrNull(m['valor_mensalidade_custom']),
         dataInicioAulas: m['data_inicio_aulas'] as String?,
         iniciante: m['iniciante'] == true,
         proRataPrimeiroMes: m['pro_rata_primeiro_mes'] != false,

@@ -5,7 +5,7 @@ Atualização: 16 de junho de 2026
 ## 1. Quem controla os dados
 
 Controlador: J FIGHT Academia (responsável local da academia).  
-Contato: `contato@jracing.dev.br` e WhatsApp `+55 (21) 00000-0000`.
+Contato: `contato@jracing.dev.br` e WhatsApp `+55 (21) 98233-6975`.
 
 ## 2. Dados que coletamos
 

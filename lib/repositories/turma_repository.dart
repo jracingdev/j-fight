@@ -1,5 +1,6 @@
 import '../core/api/api_client.dart';
 import '../core/api/api_errors.dart';
+import '../utils/api_num_utils.dart';
 import '../models/turma.dart';
 
 class TurmaRepository {
@@ -64,6 +65,6 @@ class TurmaRepository {
 
   Future<Map<String, int>> contagemAlunosPorTurma() async {
     final data = await comTimeout(_api.get('/turmas/contagem'));
-    return (data as Map<String, dynamic>).map((k, v) => MapEntry(k, v as int));
+    return (data as Map<String, dynamic>).map((k, v) => MapEntry(k, apiToInt(v)));
   }
 }

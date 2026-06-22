@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import '../../utils/image_utils.dart';
+import '../../core/api/api_errors.dart';
 import '../../core/theme.dart';
 import '../../models/aluno.dart';
 import '../../repositories/aluno_repository.dart';
@@ -28,6 +29,7 @@ class AlunosScreenState extends State<AlunosScreen> {
   List<Turma> _turmas = [];
   Map<String, List<Turma>> _turmasPorAluno = {};
   bool _loading = true;
+  String? _erro;
   String _busca = '';
   String _filtroFaixa = '';
   String _filtroStatus = 'ativo';
@@ -43,27 +45,39 @@ class AlunosScreenState extends State<AlunosScreen> {
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
-    final results = await Future.wait([
-      _repo.listar(),
-      _turmaRepo.listar(),
-      _turmaRepo.turmasPorTodosAlunos(),
-    ]);
-    final lista = results[0] as List<Aluno>;
-    final turmas = results[1] as List<Turma>;
-    final map = results[2] as Map<String, List<Turma>>;
-    final qtdPendentes = lista.where((a) => !a.cadastroValidado).length;
-    if (mounted) {
-      setState(() {
-        _alunos = lista;
-        _turmas = turmas;
-        _turmasPorAluno = map;
-        _loading = false;
-        // Cadastros novos ficam com ativo=false; filtro "Ativos" os escondia.
-        if (qtdPendentes > 0 && _filtroStatus == 'ativo') {
-          _filtroStatus = 'pendente';
-        }
-      });
+    setState(() {
+      _loading = true;
+      _erro = null;
+    });
+    try {
+      final results = await Future.wait([
+        _repo.listar(),
+        _turmaRepo.listar(),
+        _turmaRepo.turmasPorTodosAlunos(),
+      ]);
+      final lista = results[0] as List<Aluno>;
+      final turmas = results[1] as List<Turma>;
+      final map = results[2] as Map<String, List<Turma>>;
+      final qtdPendentes = lista.where((a) => !a.cadastroValidado).length;
+      if (mounted) {
+        setState(() {
+          _alunos = lista;
+          _turmas = turmas;
+          _turmasPorAluno = map;
+          _loading = false;
+          // Cadastros novos ficam com ativo=false; filtro "Ativos" os escondia.
+          if (qtdPendentes > 0 && _filtroStatus == 'ativo') {
+            _filtroStatus = 'pendente';
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _erro = mensagemErroApi(e, recurso: 'os alunos');
+        });
+      }
     }
   }
 
@@ -244,6 +258,26 @@ class AlunosScreenState extends State<AlunosScreen> {
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator(color: verdeEscuro))
+                : _erro != null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
+                              const SizedBox(height: 12),
+                              Text(_erro!, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey.shade700)),
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: _load,
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Tentar novamente'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
                 : _filtrados.isEmpty
                     ? Center(child: Text('Nenhum aluno encontrado.', style: TextStyle(color: Colors.grey.shade500)))
                     : RefreshIndicator(

@@ -236,7 +236,7 @@ class _LojaPublicaScreenState extends State<LojaPublicaScreen> {
           slivers: [
             SliverAppBar(
               pinned: true,
-              expandedHeight: 220,
+              expandedHeight: 260,
               backgroundColor: verdeEscuro,
               actions: [
                 TextButton.icon(
@@ -247,9 +247,10 @@ class _LojaPublicaScreenState extends State<LojaPublicaScreen> {
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
                   ),
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: 8),
               ],
               flexibleSpace: FlexibleSpaceBar(
+                collapseMode: CollapseMode.parallax,
                 background: Container(
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
@@ -260,50 +261,52 @@ class _LojaPublicaScreenState extends State<LojaPublicaScreen> {
                   ),
                   child: SafeArea(
                     bottom: false,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const SizedBox(height: 40),
-                        const JFightLogoImage(height: 88, width: 88, borderRadius: 16),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Loja J FIGHT',
-                          style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          academiaCredenciada,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.85),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 32),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.white24),
-                          ),
-                          child: Text(
-                            'Kimonos, faixas e equipamentos oficiais',
-                            textAlign: TextAlign.center,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 72, 12),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const JFightLogoImage(height: 80, width: 80, borderRadius: 16),
+                          const SizedBox(height: 10),
+                          const Text(
+                            'Loja J FIGHT',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.92),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: -0.5,
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          Text(
+                            academiaCredenciada,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.85),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.white24),
+                            ),
+                            child: Text(
+                              'Kimonos, faixas e equipamentos oficiais',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.92),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

@@ -5,8 +5,11 @@ import { authMiddleware } from '../middleware.js';
 
 const router = Router();
 
+// Parse JWT em todas as rotas da loja (requireAuth depende de req.userId).
+router.use(authMiddleware);
+
 // ── Produtos ────────────────────────────────────────────────
-router.get('/produtos', authMiddleware, async (req, res) => {
+router.get('/produtos', async (req, res) => {
   const admin = req.user && isAdminUser(req.user);
   const { ativo } = req.query;
   let sql = 'SELECT * FROM produtos';

@@ -23,8 +23,8 @@ const String academiaCredencial = 'DEMONSTRAÃ‡ÃƒO';
 const String professorNome = 'INSTRUTOR DEMO';
 const String professorGraduacao = 'FAIXA PRETA';
 const String professorRegistro = 'DEMO-0001';
-const String professorTelefone = '5521000000000';
-const String professorTelefoneExibicao = '(21) 00000-0000';
+const String professorTelefone = '5521982336975';
+const String professorTelefoneExibicao = '(21) 98233-6975';
 const String professorInstagram = 'jfight.academy';
 const String studioInstagram = 'jfight.studio';
 

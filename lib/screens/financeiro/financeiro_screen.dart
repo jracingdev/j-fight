@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/financeiro/calculo_mensalidade.dart';
 import '../../core/financeiro/projecao_financeira.dart';
 import '../../core/theme.dart';
+import '../../core/api/api_errors.dart';
 import '../../core/mp_service.dart';
 import '../../models/aluno.dart';
 import '../../models/financeiro_config.dart';
@@ -41,6 +42,7 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> with SingleTickerPr
   Map<String, List<String>> _alunoIdsPorTurma = {};
   FinanceiroConfig _config = const FinanceiroConfig();
   bool _loading = true;
+  String? _erro;
   int _mes = DateTime.now().month;
   int _ano = DateTime.now().year;
   bool _mpConfigurado = false;
@@ -58,7 +60,10 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> with SingleTickerPr
   }
 
   Future<void> _load({bool sincronizarMP = true}) async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _erro = null;
+    });
 
     // Sincroniza status MP em background antes de carregar a tela
     int marcadasAuto = 0;
@@ -68,38 +73,47 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> with SingleTickerPr
       } catch (_) {}
     }
 
-    final results = await Future.wait([
-      _mensRepo.listar(mes: _mes, ano: _ano),
-      _mensRepo.listar(ano: _ano),
-      _alunoRepo.listar(ativo: true),
-      _configRepo.obter(),
-      _turmaRepo.listar(),
-      _turmaRepo.alunoIdsPorTodasTurmas(),
-      MercadoPagoService.instance.getAccessToken(),
-    ]);
-    if (mounted) {
-      final turmas = results[4] as List<Turma>;
-      var mapTurma = results[5] as Map<String, List<String>>;
-      for (final t in turmas) {
-        mapTurma.putIfAbsent(t.id, () => []);
+    try {
+      final results = await Future.wait([
+        _mensRepo.listar(mes: _mes, ano: _ano),
+        _mensRepo.listar(ano: _ano),
+        _alunoRepo.listar(ativo: true),
+        _configRepo.obter(),
+        _turmaRepo.listar(),
+        _turmaRepo.alunoIdsPorTodasTurmas(),
+        MercadoPagoService.instance.getAccessToken(),
+      ]);
+      if (mounted) {
+        final turmas = results[4] as List<Turma>;
+        var mapTurma = results[5] as Map<String, List<String>>;
+        for (final t in turmas) {
+          mapTurma.putIfAbsent(t.id, () => []);
+        }
+        final token = results[6] as String?;
+        setState(() {
+          _mensalidades = results[0] as List<Mensalidade>;
+          _mensalidadesAno = results[1] as List<Mensalidade>;
+          _alunos = results[2] as List<Aluno>;
+          _config = results[3] as FinanceiroConfig;
+          _turmas = turmas;
+          _alunoIdsPorTurma = mapTurma;
+          _mpConfigurado = token != null && token.isNotEmpty;
+          _loading = false;
+        });
+        if (marcadasAuto > 0) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('✅ $marcadasAuto pagamento(s) confirmado(s) automaticamente pelo Mercado Pago!'),
+            backgroundColor: verdeEscuro,
+            duration: const Duration(seconds: 4),
+          ));
+        }
       }
-      final token = results[6] as String?;
-      setState(() {
-        _mensalidades = results[0] as List<Mensalidade>;
-        _mensalidadesAno = results[1] as List<Mensalidade>;
-        _alunos = results[2] as List<Aluno>;
-        _config = results[3] as FinanceiroConfig;
-        _turmas = turmas;
-        _alunoIdsPorTurma = mapTurma;
-        _mpConfigurado = token != null && token.isNotEmpty;
-        _loading = false;
-      });
-      if (marcadasAuto > 0) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('✅ $marcadasAuto pagamento(s) confirmado(s) automaticamente pelo Mercado Pago!'),
-          backgroundColor: verdeEscuro,
-          duration: const Duration(seconds: 4),
-        ));
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _erro = mensagemErroApi(e, recurso: 'o financeiro');
+        });
       }
     }
   }
@@ -159,7 +173,27 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> with SingleTickerPr
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: verdeEscuro))
-          : TabBarView(
+          : _erro != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
+                        const SizedBox(height: 12),
+                        Text(_erro!, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey.shade700)),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: _load,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Tentar novamente'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : TabBarView(
               controller: _tabs,
               children: [
                 _PainelBI(

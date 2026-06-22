@@ -28,4 +28,4 @@ Atualização: 16 de junho de 2026
 ## Canais
 
 - E-mail: `contato@jracing.dev.br`
-- WhatsApp: `+55 (21) 00000-0000`
+- WhatsApp: `+55 (21) 98233-6975`

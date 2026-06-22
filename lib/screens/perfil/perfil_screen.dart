@@ -355,11 +355,17 @@ class _PerfilScreenState extends State<PerfilScreen> {
               const SizedBox(height: 10),
               Card(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     SwitchListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       secondary: const Icon(Icons.volume_up_outlined, color: verdeEscuro),
                       title: const Text('Alertas sonoros'),
-                      subtitle: const Text('Som ao receber avisos, medalhas ou pedidos na loja'),
+                      subtitle: const Text(
+                        'Som ao receber avisos, medalhas ou pedidos na loja',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       value: _alertasSom,
                       thumbColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.selected) ? verdeEscuro : null),
                       onChanged: (v) async {
@@ -369,9 +375,14 @@ class _PerfilScreenState extends State<PerfilScreen> {
                     ),
                     const Divider(height: 1),
                     SwitchListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       secondary: const Icon(Icons.notifications_active_outlined, color: verdeEscuro),
                       title: const Text('Alertas visuais'),
-                      subtitle: const Text('Banner com logo da academia no topo da tela'),
+                      subtitle: const Text(
+                        'Banner com logo da academia no topo da tela',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       value: _alertasVisual,
                       thumbColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.selected) ? verdeEscuro : null),
                       onChanged: (v) async {
@@ -444,11 +455,16 @@ class _PerfilScreenState extends State<PerfilScreen> {
                       return ListTile(
                         leading: Icon(icon, color: cor),
                         title: Text(formatMesAnoPartes(m.mes, m.ano), style: const TextStyle(fontWeight: FontWeight.w600)),
-                        subtitle: m.dataPagamento != null ? Text('Pago em ${formatDataBr(m.dataPagamento)}') : null,
-                        trailing: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: [
-                          Text('R\$ ${m.valor.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w700)),
-                          Text(m.status, style: TextStyle(fontSize: 11, color: cor)),
-                        ]),
+                        subtitle: Text(
+                          [
+                            if (m.dataPagamento != null) 'Pago em ${formatDataBr(m.dataPagamento)}',
+                            m.status,
+                          ].where((s) => s.isNotEmpty).join(' · '),
+                        ),
+                        trailing: Text(
+                          'R\$ ${m.valor.toStringAsFixed(2)}',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
                       );
                     }).toList(),
                   ),
