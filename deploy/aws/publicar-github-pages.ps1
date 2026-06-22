@@ -14,17 +14,34 @@ New-Item -ItemType Directory -Path $deployDir | Out-Null
 Copy-Item -Recurse -Force "build\web\*" $deployDir
 
 Push-Location $deployDir
-git init | Out-Null
-git checkout -b gh-pages 2>$null | Out-Null
-git add -A
-git commit -m "Deploy GitHub Pages $(Get-Date -Format 'yyyy-MM-dd HH:mm')" | Out-Null
+try {
+    # Git escreve mensagens normais no stderr; evita falso erro com Stop.
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
 
-$remote = "https://github.com/jracingdev/j-fight.git"
-git remote add origin $remote 2>$null
-git push -f origin gh-pages
+    git init 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "git init falhou (exit $LASTEXITCODE)" }
 
-Pop-Location
-Remove-Item -Recurse -Force $deployDir
+    git checkout -b gh-pages 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "git checkout -b gh-pages falhou (exit $LASTEXITCODE)" }
+
+    git add -A
+    git commit -m "Deploy GitHub Pages $(Get-Date -Format 'yyyy-MM-dd HH:mm')" 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "git commit falhou (exit $LASTEXITCODE)" }
+
+    $remote = "https://github.com/jracingdev/j-fight.git"
+    git remote remove origin 2>&1 | Out-Null
+    git remote add origin $remote 2>&1 | Out-Null
+
+    git push -f origin gh-pages 2>&1
+    if ($LASTEXITCODE -ne 0) { throw "git push falhou (exit $LASTEXITCODE)" }
+
+    $ErrorActionPreference = $prevEap
+}
+finally {
+    Pop-Location
+    if (Test-Path $deployDir) { Remove-Item -Recurse -Force $deployDir }
+}
 
 Write-Host ""
 Write-Host "Publicado! Aguarde 1-3 min e abra:"
