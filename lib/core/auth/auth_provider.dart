@@ -20,7 +20,11 @@ class AuthProvider extends ChangeNotifier {
   bool get carregandoAluno => _carregandoAluno;
   String? get mensagemAuth => _mensagemAuth;
   bool get autenticado => _usuario != null;
-  bool get isAdmin => _usuario?.isAdmin ?? false;
+  bool get isAdmin {
+    final u = _usuario;
+    if (u == null) return false;
+    return u.isAdmin || AuthService.roleForEmail(u.email) == 'admin';
+  }
 
   bool get precisaCompletarCadastro {
     if (isAdmin || _usuario == null) return false;
@@ -46,12 +50,16 @@ class AuthProvider extends ChangeNotifier {
     }
     if (_usuario != null && !isAdmin) {
       await _atualizarVinculoAluno();
+    } else if (_usuario != null && isAdmin) {
+      _alunoVinculado = null;
+      _carregandoAluno = false;
     }
   }
 
   Future<void> _carregarAlunoVinculado() async {
     if (_usuario == null || isAdmin) {
       _alunoVinculado = null;
+      _mensagemAuth = null;
       return;
     }
     try {
@@ -89,10 +97,12 @@ class AuthProvider extends ChangeNotifier {
     _mensagemAuth = result.message;
     if (result.usuario != null) {
       _usuario = result.usuario;
-      if (!isAdmin) {
-        await _atualizarVinculoAluno();
-      } else {
+      if (isAdmin) {
+        _alunoVinculado = null;
+        _carregandoAluno = false;
         notifyListeners();
+      } else {
+        await _atualizarVinculoAluno();
       }
     }
     return result;
@@ -103,10 +113,12 @@ class AuthProvider extends ChangeNotifier {
     _mensagemAuth = result.message;
     if (result.usuario != null) {
       _usuario = result.usuario;
-      if (!isAdmin) {
-        await _atualizarVinculoAluno();
-      } else {
+      if (isAdmin) {
+        _alunoVinculado = null;
+        _carregandoAluno = false;
         notifyListeners();
+      } else {
+        await _atualizarVinculoAluno();
       }
     }
     return result;
@@ -177,10 +189,12 @@ class AuthProvider extends ChangeNotifier {
     _mensagemAuth = result.message;
     if (result.usuario != null) {
       _usuario = result.usuario;
-      if (!isAdmin) {
-        await _atualizarVinculoAluno();
-      } else {
+      if (isAdmin) {
+        _alunoVinculado = null;
+        _carregandoAluno = false;
         notifyListeners();
+      } else {
+        await _atualizarVinculoAluno();
       }
     }
     return result;

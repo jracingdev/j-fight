@@ -68,8 +68,10 @@ class _PerfilScreenState extends State<PerfilScreen> {
     final auth = context.read<AuthProvider>();
     final user = auth.usuario;
     if (user == null) return;
-    final aluno = auth.alunoVinculado ??
-        (user.email.isNotEmpty ? await _alunoRepo.buscarPorEmail(user.email) : null);
+    final aluno = auth.isAdmin
+        ? null
+        : auth.alunoVinculado ??
+            (user.email.isNotEmpty ? await _alunoRepo.buscarPorEmail(user.email) : null);
     List<Mensalidade> mens = [];
     List<Turma> turmas = [];
     if (aluno != null) {

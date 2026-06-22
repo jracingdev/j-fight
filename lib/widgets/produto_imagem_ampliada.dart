@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/app_version.dart';
@@ -21,7 +22,11 @@ class ProdutoImagemComZoom extends StatelessWidget {
   });
 
   void _abrir(BuildContext context) {
-    HapticFeedback.lightImpact();
+    if (!kIsWeb) {
+      try {
+        HapticFeedback.lightImpact();
+      } catch (_) {}
+    }
     final ctx = navigatorContext ?? context;
     ProdutoImagemAmpliada.mostrarProduto(ctx, produto);
   }
@@ -76,7 +81,11 @@ class ProdutoImagemAmpliada {
     String? youtubeThumb,
     bool priorizarVideo = false,
   }) {
-    HapticFeedback.mediumImpact();
+    if (!kIsWeb) {
+      try {
+        HapticFeedback.mediumImpact();
+      } catch (_) {}
+    }
     final nav = Navigator.of(context, rootNavigator: true);
     return nav.push<void>(
       MaterialPageRoute<void>(

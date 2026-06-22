@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
@@ -22,8 +23,10 @@ class AppAlertService {
     final visualAtivo = await prefs.alertasVisuaisAtivos;
     if (!somAtivo && !visualAtivo) return;
 
-    if (somAtivo) {
-      await HapticFeedback.heavyImpact();
+    if (somAtivo && !kIsWeb) {
+      try {
+        await HapticFeedback.heavyImpact();
+      } catch (_) {}
       try {
         await FlutterRingtonePlayer().playNotification();
       } catch (_) {

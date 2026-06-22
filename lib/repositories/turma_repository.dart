@@ -40,14 +40,22 @@ class TurmaRepository {
   }
 
   Future<Map<String, List<Turma>>> turmasPorTodosAlunos() async {
-    final data = await comTimeout(_api.get('/turmas/mapa/alunos'));
-    final map = <String, List<Turma>>{};
-    (data as Map<String, dynamic>).forEach((alunoId, turmas) {
-      map[alunoId] = (turmas as List)
-          .map((t) => Turma.fromMap(Map<String, dynamic>.from(t as Map)))
-          .toList();
-    });
-    return map;
+    try {
+      final data = await comTimeout(
+        _api.get('/turmas/mapa/alunos'),
+        timeout: const Duration(seconds: 25),
+      );
+      if (data == null) return {};
+      final map = <String, List<Turma>>{};
+      (data as Map<String, dynamic>).forEach((alunoId, turmas) {
+        map[alunoId] = (turmas as List)
+            .map((t) => Turma.fromMap(Map<String, dynamic>.from(t as Map)))
+            .toList();
+      });
+      return map;
+    } catch (_) {
+      return {};
+    }
   }
 
   Future<Map<String, List<String>>> alunoIdsPorTodasTurmas() async {
