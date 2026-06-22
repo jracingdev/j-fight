@@ -5,6 +5,7 @@
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+-- Se falhar no aaPanel, peça ao admin instalar pgcrypto ou ignore (a API gera UUIDs).
 
 -- ── Autenticação própria ─────────────────────────────────────
 CREATE TABLE IF NOT EXISTS auth_accounts (

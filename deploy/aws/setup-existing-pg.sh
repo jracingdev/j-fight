@@ -120,7 +120,8 @@ if ! psql_tcp "$JFIGHT_DB_NAME" -c "SELECT 1" &>/dev/null; then
   exit 1
 fi
 
-DATABASE_URL="postgresql://${JFIGHT_DB_USER}:${JFIGHT_DB_PASSWORD}@${JFIGHT_DB_HOST}:${JFIGHT_DB_PORT}/${JFIGHT_DB_NAME}"
+ENC_PASSWORD=$(node -e "console.log(encodeURIComponent(process.argv[1]))" "$JFIGHT_DB_PASSWORD")
+DATABASE_URL="postgresql://${JFIGHT_DB_USER}:${ENC_PASSWORD}@${JFIGHT_DB_HOST}:${JFIGHT_DB_PORT}/${JFIGHT_DB_NAME}"
 
 echo "==> Aplicando schema..."
 export PGPASSWORD="$JFIGHT_DB_PASSWORD"
