@@ -6,14 +6,14 @@ import 'package:file_picker/file_picker.dart';
 import '../supabase_service.dart';
 
 class DriveBackup {
-  static const _fileName = 'ct_sm_bjj_backup.json';
+  static const _fileName = 'j_fight_backup.json';
 
   Future<bool> exportar() async {
     try {
       // Exporta todas as tabelas do Supabase
       final tables = ['alunos', 'mensalidades', 'produtos', 'produto_variantes', 'avisos', 'eventos', 'turmas', 'aluno_turmas'];
       final Map<String, dynamic> data = {
-        'app': 'ct_sm_bjj',
+        'app': 'j_fight',
         'version': 3,
         'exported_at': DateTime.now().toIso8601String(),
       };
@@ -28,8 +28,8 @@ class DriveBackup {
 
       final result = await Share.shareXFiles(
         [XFile(file.path, mimeType: 'application/json', name: _fileName)],
-        subject: 'Backup CT SM BJJ — ${DateTime.now().toIso8601String().substring(0, 10)}',
-        text: 'Backup do app CT SM BJJ. Salve este arquivo em local seguro.',
+        subject: 'Backup J FIGHT — ${DateTime.now().toIso8601String().substring(0, 10)}',
+        text: 'Backup do app J FIGHT. Salve este arquivo em local seguro.',
       );
       return result.status != ShareResultStatus.dismissed;
     } catch (_) {
@@ -42,7 +42,7 @@ class DriveBackup {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['json'],
-        dialogTitle: 'Selecione o arquivo de backup CT SM BJJ',
+        dialogTitle: 'Selecione o arquivo de backup J FIGHT',
       );
       if (result == null || result.files.isEmpty) return BackupRestoreResult.cancelado;
       final path = result.files.single.path;
@@ -50,7 +50,7 @@ class DriveBackup {
 
       final content = await File(path).readAsString(encoding: utf8);
       final data = jsonDecode(content) as Map<String, dynamic>;
-      if (data['app'] != 'ct_sm_bjj') return BackupRestoreResult.arquivoInvalido;
+      if (data['app'] != 'j_fight') return BackupRestoreResult.arquivoInvalido;
 
       // Restaura no Supabase
       final tables = ['avisos', 'eventos', 'produto_variantes', 'produtos', 'mensalidades', 'alunos'];

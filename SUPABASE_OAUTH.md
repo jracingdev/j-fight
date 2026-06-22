@@ -1,17 +1,17 @@
-# OAuth Google — CT SM BJJ
+# OAuth Google — J FIGHT
 
 ## Supabase (Authentication → URL Configuration)
 
 **Redirect URLs** (todas):
 
 ```
-https://jracingdev.github.io/smbjj/
-https://jracingdev.github.io/smbjj
+https://jracingdev.github.io/j-fight/
+https://jracingdev.github.io/j-fight
 io.supabase.flutter://callback
-com.smbijj.ct_sm_bjj://login-callback
+com.jracingdev.jfight://login-callback
 ```
 
-**Site URL (web):** `https://jracingdev.github.io/smbjj/`
+**Site URL (web):** `https://jracingdev.github.io/j-fight/`
 
 No provedor **Google**, ative **Skip nonce check** (recomendado para login nativo no app).
 
@@ -43,12 +43,12 @@ Sem o `GOOGLE_WEB_CLIENT_ID`, o app cai no fluxo antigo (navegador + deep link),
 
 ## Web (GitHub Pages)
 
-Login Google usa redirect para `https://jracingdev.github.io/smbjj/` — permanece no navegador.
+Login Google usa redirect para `https://jracingdev.github.io/j-fight/` — permanece no navegador.
 
 ---
 
 ## Fallback OAuth no app (se não houver Client ID)
 
 - Redirect: `io.supabase.flutter://callback`
-- Abre o **navegador externo**; após login, o sistema deve oferecer **Abrir no CT SM BJJ**
+- Abre o **navegador externo**; após login, o sistema deve oferecer **Abrir no J FIGHT**
 - `AndroidManifest.xml` já declara os intent-filters

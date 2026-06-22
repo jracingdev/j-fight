@@ -1,5 +1,5 @@
 -- ============================================================
--- CT SM BJJ — Turmas (execute após supabase_setup.sql)
+-- J FIGHT — Turmas (execute após supabase_setup.sql)
 -- ============================================================
 
 create table if not exists public.turmas (

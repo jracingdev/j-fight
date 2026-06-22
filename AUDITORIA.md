@@ -1,8 +1,8 @@
-# Auditoria CT SM BJJ — App + Web (Supabase)
+# Auditoria J FIGHT — App + Web (Supabase)
 
-**Projeto:** `https://github.com/jracingdev/smbjj`  
+**Projeto:** `https://github.com/jracingdev/j-fight`  
 **Backend:** `https://zhjnxspunbtyqhlyliuw.supabase.co`  
-**Web:** `https://jracingdev.github.io/smbjj/`  
+**Web:** `https://jracingdev.github.io/j-fight/`  
 **Versão alvo atual:** **1.2.4** (build 9)
 
 ---
@@ -30,7 +30,7 @@
 - Em cada card: botão **Validar** → `ValidarAlunoScreen` (faixa, grau, turmas).
 
 ### Como validar (admin)
-1. Login `admin@smbj.com`
+1. Login `admin@jfight.app`
 2. **Início** → toque no alerta amarelo **ou** **Alunos** (já em Pendentes)
 3. **Validar** no aluno → confirmar dados, faixa, turmas → salvar
 
@@ -63,9 +63,9 @@ Para cada produto sem imagem: **Loja → Editar → escolher foto → Salvar** (
 
 - [ ] `supabase_setup.sql`
 - [ ] `supabase_turmas.sql`
-- [ ] `supabase_auth_fix.sql` (só `admin@smbj.com` como admin)
+- [ ] `supabase_auth_fix.sql` (só `admin@jfight.app` como admin)
 - [ ] `supabase_pedidos.sql` (se usar pedidos)
-- [ ] Auth: usuário **admin@smbj.com**
+- [ ] Auth: usuário **admin@jfight.app**
 - [ ] Auth → URL: redirect `io.supabase.flutter://callback` (Google Android)
 - [ ] Storage → bucket **fotos** público + políticas insert/update autenticado
 
@@ -124,15 +124,15 @@ Para cada produto sem imagem: **Loja → Editar → escolher foto → Salvar** (
 ```bash
 # Android
 flutter build apk --release
-adb uninstall com.smbijj.ct_sm_bjj
+adb uninstall com.jracingdev.jfight
 flutter install -d <device_id>
 
 # Web
-flutter build web --release --base-href "/smbjj/"
+flutter build web --release --base-href "/j-fight/"
 # copiar build/web para branch gh-pages e push
 ```
 
-**Preview de link (WhatsApp / redes):** as tags Open Graph e Twitter Card ficam em `web/index.html` (título, descrição, imagem em URL absoluta). Após publicar na `gh-pages`, valide e force nova leitura do cache em [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/) com a URL `https://jracingdev.github.io/smbjj/` (o WhatsApp usa o mesmo cache). Pastas locais `gh-deploy/` e `_gh_pages_deploy/` na raiz do disco são cópias antigas de build — a fonte é `ct_sm_bjj/web/`.
+**Preview de link (WhatsApp / redes):** as tags Open Graph e Twitter Card ficam em `web/index.html` (título, descrição, imagem em URL absoluta). Após publicar na `gh-pages`, valide e force nova leitura do cache em [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/) com a URL `https://jracingdev.github.io/j-fight/` (o WhatsApp usa o mesmo cache). Pastas locais `gh-deploy/` e `_gh_pages_deploy/` na raiz do disco são cópias antigas de build — a fonte é `j_fight/web/`.
 
 ---
 

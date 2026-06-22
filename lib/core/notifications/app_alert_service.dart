@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
+import '../../widgets/jfight_logo_image.dart';
 import 'alert_preferences_service.dart';
 
 /// Alertas visuais e sonoros in-app (logo + som + banner flutuante).
@@ -62,21 +63,7 @@ class AppAlertService {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.asset(
-                      'assets/images/logo.png',
-                      width: 48,
-                      height: 48,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        width: 48,
-                        height: 48,
-                        color: Colors.white24,
-                        child: const Icon(Icons.sports_martial_arts, color: Colors.white),
-                      ),
-                    ),
-                  ),
+                  const JFightLogoImage(height: 48, width: 48, borderRadius: 10),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(

@@ -1,6 +1,6 @@
 import '../constants.dart';
 
-/// Textos legais do app CT SM BJJ (LGPD e uso do serviço).
+/// Textos legais do app J FIGHT (LGPD e uso do serviço).
 class LegalTexts {
   LegalTexts._();
 
@@ -23,7 +23,7 @@ Declaro que li e concordo com os termos abaixo:
 
 ✓ Tenho ciência de que a prática do Jiu-Jitsu envolve contato físico e riscos inerentes à atividade esportiva, incluindo quedas, contusões, torções e outras lesões.
 
-✓ Assumo total responsabilidade pelas informações prestadas e pela minha participação nas atividades, isentando a Marinho Team Jiu-Jitsu, seus professores e colaboradores de responsabilidade por problemas de saúde ou condições médicas não informadas previamente.
+✓ Assumo total responsabilidade pelas informações prestadas e pela minha participação nas atividades, isentando a J FIGHT Academia, seus professores e colaboradores de responsabilidade por problemas de saúde ou condições médicas não informadas previamente.
 
 ✓ Declaro ser maior de 18 anos ou possuir autorização de meu responsável legal para participar das atividades.
 
@@ -34,10 +34,10 @@ Ao marcar a opção "Li e Concordo" no cadastro, declaro que as informações ac
 Última atualização: $dataAtualizacao
 
 1. ACEITAÇÃO
-Ao criar conta, acessar ou utilizar o aplicativo e site CT SM BJJ ("App"), você declara ter lido, compreendido e aceito estes Termos e Condições de Uso e a Política de Privacidade.
+Ao criar conta, acessar ou utilizar o aplicativo e site J FIGHT ("App"), você declara ter lido, compreendido e aceito estes Termos e Condições de Uso e a Política de Privacidade.
 
 2. QUEM SOMOS
-O App é operado por $professorNome, responsável pela academia CT SM BJJ, $academiaCredenciada ($academiaCredencial), com sede no Rio de Janeiro/RJ, Brasil.
+O App é operado por $professorNome, responsável pela academia J FIGHT, $academiaCredenciada ($academiaCredencial), com sede no Rio de Janeiro/RJ, Brasil.
 
 3. OBJETO DO SERVIÇO
 O App destina-se à gestão da academia e relacionamento com alunos, incluindo, entre outras funções: cadastro, turmas, presença, mensalidades, avisos, medalhas, loja de produtos e comunicação com a equipe.
@@ -52,7 +52,7 @@ O App destina-se à gestão da academia e relacionamento com alunos, incluindo, 
 Após criar a conta no App, o aluno pode complementar dados na academia. A matrícula e a validação do cadastro dependem de aprovação do professor/administrador.
 
 6. LOJA E COMPRAS
-6.1. O site principal (smbjj.com.br) exibe a loja para visitantes; alunos e equipe acessam o app completo após login.
+6.1. O site principal (jracingdev.github.io/j-fight) exibe a loja para visitantes; alunos e equipe acessam o app completo após login.
 6.2. Visitantes podem comprar informando nome e contato; alunos logados compram com dados vinculados ao cadastro.
 6.3. Preços, prazos e condições exibidos no App podem ser alterados sem aviso prévio, respeitados pedidos já confirmados.
 
@@ -63,7 +63,7 @@ Pagamentos podem ocorrer via PIX, Mercado Pago ou outros meios indicados no App.
 É proibido: usar o App para fins ilícitos; tentar acessar dados de terceiros sem autorização; interferir no funcionamento do sistema; publicar conteúdo ofensivo ou que viole direitos de terceiros.
 
 9. PROPRIEDADE INTELECTUAL
-Marcas, logotipos, layout e conteúdos do App pertencem à CT SM BJJ ou a seus licenciadores. O uso não autorizado é vedado.
+Marcas, logotipos, layout e conteúdos do App pertencem à J FIGHT ou a seus licenciadores. O uso não autorizado é vedado.
 
 10. DISPONIBILIDADE E LIMITAÇÃO
 O App é fornecido "como está". Empregamos esforços razoáveis para manter o serviço disponível, mas não garantimos operação ininterrupta. A academia não se responsabiliza por indisponibilidades de internet, serviços de terceiros ou caso fortuito.
@@ -87,10 +87,10 @@ A participação nos treinos exige aceite do Termo de Aptidão Física e Respons
   static String get privacidade => '''
 Última atualização: $dataAtualizacao
 
-Esta Política descreve como a CT SM BJJ trata dados pessoais no App e no site, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018 — LGPD).
+Esta Política descreve como a J FIGHT trata dados pessoais no App e no site, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018 — LGPD).
 
 1. CONTROLADOR
-Controlador dos dados: $professorNome / CT SM BJJ.
+Controlador dos dados: $professorNome / J FIGHT.
 Contato do encarregado/DPO: $developerEmail · WhatsApp $professorTelefoneExibicao.
 
 2. DADOS QUE COLETAMOS

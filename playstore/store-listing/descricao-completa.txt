@@ -1,0 +1,27 @@
+O J FIGHT Academia foi criado para conectar alunos, equipe e gestão da academia em uma experiência simples, rápida e segura.
+
+Com o app você consegue:
+
+- Gerenciar seu perfil e dados da academia
+- Acompanhar mensalidades e status de pagamento
+- Consultar turmas e rotina de treinos
+- Registrar e acompanhar presença
+- Receber comunicados e avisos importantes
+- Acessar a loja da academia com praticidade
+- Fazer login com e-mail/senha ou conta Google
+- Ativar biometria no aparelho para acesso mais rápido
+
+Para a equipe administrativa e professor:
+
+- Organização centralizada de alunos e informações essenciais
+- Fluxo de acompanhamento financeiro
+- Apoio no controle de participação e evolução
+- Comunicação mais direta com a base de alunos
+
+Privacidade e segurança:
+
+- Dados protegidos com infraestrutura moderna
+- Controle de acesso por perfil no sistema
+- Recursos de autenticação para proteger sua conta
+
+J FIGHT Academia: tecnologia para fortalecer a organização da academia e melhorar a experiência de quem treina todos os dias.

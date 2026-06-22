@@ -1,5 +1,5 @@
 -- ============================================================
--- CT SM BJJ — Financeiro avançado (execute no Supabase)
+-- J FIGHT — Financeiro avançado (execute no Supabase)
 -- Mensalidades automáticas, bolsas, família, interrupção, pro-rata
 -- ============================================================
 

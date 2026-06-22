@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/legal/legal_texts.dart';
+import '../../widgets/jfight_logo_image.dart';
 import '../../core/theme.dart';
 
 enum LegalDoc { termos, privacidade, aptidao }
@@ -37,28 +38,14 @@ class LegalDocumentScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.asset(
-                  'assets/images/logo.png',
-                  width: 44,
-                  height: 44,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    width: 44,
-                    height: 44,
-                    color: verdeEscuro.withValues(alpha: 0.15),
-                    child: const Icon(Icons.sports_martial_arts, color: verdeEscuro),
-                  ),
-                ),
-              ),
+              const JFightLogoImage(height: 44, width: 44, borderRadius: 10),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(_titulo, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: verdeEscuro)),
-                    Text('CT SM BJJ · ${LegalTexts.dataAtualizacao}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                    Text('J FIGHT · ${LegalTexts.dataAtualizacao}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                   ],
                 ),
               ),

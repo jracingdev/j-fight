@@ -1,5 +1,5 @@
 -- ============================================================
--- CT SM BJJ — CORREÇÃO turmas invisíveis
+-- J FIGHT — CORREÇÃO turmas invisíveis
 -- Execute no SQL Editor do Supabase
 --
 -- Causa: ao salvar dias da turma o app gravava ativa=false

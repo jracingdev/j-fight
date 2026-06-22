@@ -1,5 +1,5 @@
 -- ============================================================
--- CT SM BJJ — Presença nos treinos
+-- J FIGHT — Presença nos treinos
 -- Execute após supabase_setup.sql e supabase_turmas.sql
 -- ============================================================
 

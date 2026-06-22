@@ -894,7 +894,7 @@ class _MpTabState extends State<_MpTab> {
       titulo: 'Mensalidade $mesAno — ${aluno.nome}',
       valor: valor,
       emailPagador: aluno.email,
-      descricao: 'SM BJJ — Academia de Jiu-Jitsu',
+      descricao: 'J FIGHT — Academia de Jiu-Jitsu',
       metadados: {'aluno_id': aluno.id, 'mes': '${widget.mes}', 'ano': '${widget.ano}'},
     );
 
@@ -1042,7 +1042,7 @@ class _LinkSheet extends StatelessWidget {
     Future<void> enviarWhatsApp() async {
       if (tel == null) return;
       final msg = 'Olá, ${aluno.nomeResponsavel ?? aluno.nome}! 😊\n\n'
-          'Segue o link para pagamento da mensalidade de *$mesAno* da SM BJJ:\n\n'
+          'Segue o link para pagamento da mensalidade de *$mesAno* da J FIGHT:\n\n'
           '💰 Valor: *R\$ ${valor.toStringAsFixed(2)}*\n\n'
           '🔗 Link de pagamento:\n${pref.link}\n\n'
           'Aceitamos PIX, cartão e boleto pelo link! 🥋';
@@ -1103,7 +1103,7 @@ class _CobrancaAvulsaSheetState extends State<_CobrancaAvulsaSheet> {
       titulo: _tituloCtrl.text.trim(),
       valor: valor,
       emailPagador: _aluno?.email,
-      descricao: 'SM BJJ — Cobrança avulsa',
+      descricao: 'J FIGHT — Cobrança avulsa',
     );
 
     setState(() => _loading = false);
@@ -1126,7 +1126,7 @@ class _CobrancaAvulsaSheetState extends State<_CobrancaAvulsaSheet> {
     if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
 
     if (tel != null) {
-      final msg = 'Olá${nomeContato != null ? ', $nomeContato' : ''}! Segue o link de pagamento da SM BJJ:\n\n'
+      final msg = 'Olá${nomeContato != null ? ', $nomeContato' : ''}! Segue o link de pagamento da J FIGHT:\n\n'
           '📋 *$titulo*\n'
           '💰 Valor: *R\$ ${valor.toStringAsFixed(2)}*\n\n'
           '🔗 $link\n\nAceitamos PIX, cartão e boleto! 🥋';

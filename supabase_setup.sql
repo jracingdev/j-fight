@@ -1,5 +1,5 @@
 -- ============================================================
--- CT SM BJJ — Supabase Setup (ordem corrigida)
+-- J FIGHT — Supabase Setup (ordem corrigida)
 -- Execute TUDO de uma vez no SQL Editor
 -- ============================================================
 
@@ -45,7 +45,7 @@ declare
   v_email text := lower(trim(coalesce(new.email, '')));
   v_role text := 'aluno';
 begin
-  if v_email = 'admin@smbj.com' then
+  if v_email = 'admin@jfight.app' then
     v_role := 'admin';
   end if;
   insert into public.usuarios (id, nome, email, role, foto_url)

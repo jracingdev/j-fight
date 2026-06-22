@@ -1,5 +1,5 @@
 -- ============================================================
--- CT SM BJJ — Tabela de Pedidos da Loja
+-- J FIGHT — Tabela de Pedidos da Loja
 -- Execute no SQL Editor do Supabase
 -- ============================================================
 

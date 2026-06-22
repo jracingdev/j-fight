@@ -3,7 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/app_version.dart';
 import '../core/constants.dart';
 import '../core/theme.dart';
-import '../widgets/gft_logo_image.dart';
+import '../widgets/jfight_logo_image.dart';
 import '../widgets/contatos_card.dart';
 import 'legal/legal_document_screen.dart';
 
@@ -18,19 +18,11 @@ class SobreScreen extends StatelessWidget {
         padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).padding.bottom + 20),
         child: Column(children: [
 
-          // Logo SM BJJ
-          ClipRRect(
-            borderRadius: BorderRadius.circular(60),
-            child: Image.asset('assets/images/logo.png', width: 100, height: 100, fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                width: 100, height: 100,
-                decoration: BoxDecoration(color: verdeEscuro, borderRadius: BorderRadius.circular(60)),
-                child: const Icon(Icons.sports_martial_arts, size: 48, color: Colors.white),
-              )),
-          ),
+          // Logo J FIGHT
+          const JFightLogoImage(height: 110, width: 110, borderRadius: 20),
           const SizedBox(height: 12),
-          const Text('CT SM BJJ', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: verdeEscuro)),
-          Text('Academia de Jiu-Jitsu · desde $academiaFundacao',
+          const Text('J FIGHT', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: verdeEscuro)),
+          Text('Academia de Artes Marciais · desde $academiaFundacao',
               style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
           const SizedBox(height: 6),
           Text('Versão ${AppVersion.label}',
@@ -38,9 +30,9 @@ class SobreScreen extends StatelessWidget {
 
           const SizedBox(height: 24),
 
-          // GFT Team
+          // Academia
           _Card(child: Column(children: [
-            const GftLogoImage(height: 96),
+            const JFightLogoImage(height: 96),
             const SizedBox(height: 12),
             const Text('ACADEMIA CREDENCIADA', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, letterSpacing: 1)),
             const SizedBox(height: 4),
@@ -84,6 +76,32 @@ class SobreScreen extends StatelessWidget {
             ]),
             const Divider(height: 20),
             const LegalDocumentLinks(),
+            const SizedBox(height: 10),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.open_in_new, color: verdeEscuro),
+              title: const Text('Política de Privacidade (web)'),
+              subtitle: const Text('Link público exigido para publicação na Play Store'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () async {
+                final uri = Uri.parse(privacyPolicyUrl);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.open_in_new, color: verdeEscuro),
+              title: const Text('Termos de Uso (web)'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () async {
+                final uri = Uri.parse(termsOfUseUrl);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
+            ),
           ])),
 
           const SizedBox(height: 16),
@@ -100,7 +118,7 @@ class SobreScreen extends StatelessWidget {
               const SizedBox(height: 4),
               GestureDetector(
                 onTap: () async {
-                  final uri = Uri.parse('https://$developerUrl');
+                  final uri = Uri.parse(developerUrl);
                   if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
                 },
                 child: Text(developerNome,
@@ -112,7 +130,7 @@ class SobreScreen extends StatelessWidget {
           ),
 
           const SizedBox(height: 12),
-          Text('© $academiaFundacao–${DateTime.now().year} CT SM BJJ · Todos os direitos reservados',
+          Text('© $academiaFundacao–${DateTime.now().year} J FIGHT · Todos os direitos reservados',
               style: TextStyle(fontSize: 10, color: Colors.grey.shade400), textAlign: TextAlign.center),
         ]),
       ),

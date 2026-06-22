@@ -1,0 +1,4 @@
+storePassword=SEU_STORE_PASSWORD
+keyPassword=SEU_KEY_PASSWORD
+keyAlias=upload
+storeFile=../upload-keystore.jks

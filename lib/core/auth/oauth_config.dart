@@ -9,7 +9,7 @@ class OAuthConfig {
   static const appRedirect = 'io.supabase.flutter://callback';
 
   /// Esquema alternativo (mantido no AndroidManifest).
-  static const legacyAppRedirect = 'com.smbijj.ct_sm_bjj://login-callback';
+  static const legacyAppRedirect = 'com.jracingdev.jfight://login-callback';
 
   /// Web Client ID do Google Cloud (OAuth tipo Web) — mesmo do Supabase → Providers → Google.
   static String get googleWebClientId => googleWebClientIdEnv;

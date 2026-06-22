@@ -11,6 +11,7 @@ import '../../repositories/produto_repository.dart';
 import '../../utils/loja_tamanhos.dart';
 import '../../widgets/produto_imagem.dart';
 import '../../widgets/produto_imagem_ampliada.dart';
+import '../../widgets/jfight_logo_image.dart';
 import '../auth/login_screen.dart';
 import '../legal/legal_document_screen.dart';
 
@@ -182,7 +183,7 @@ class _LojaPublicaScreenState extends State<LojaPublicaScreen> {
             FilledButton.icon(
               onPressed: () async {
                 final msg =
-                    'Olá! Fiz um pedido na loja SM BJJ: ${p.nome} — R\$ ${pedido.valorTotal.toStringAsFixed(2)}';
+                    'Olá! Fiz um pedido na loja J FIGHT: ${p.nome} — R\$ ${pedido.valorTotal.toStringAsFixed(2)}';
                 final uri = Uri.parse(
                   'https://wa.me/$professorTelefone?text=${Uri.encodeComponent(msg)}',
                 );
@@ -217,7 +218,7 @@ class _LojaPublicaScreenState extends State<LojaPublicaScreen> {
 
   Future<void> _abrirWhatsApp() async {
     final uri = Uri.parse(
-      'https://wa.me/$professorTelefone?text=${Uri.encodeComponent('Olá! Tenho dúvidas sobre a loja SM BJJ.')}',
+      'https://wa.me/$professorTelefone?text=${Uri.encodeComponent('Olá! Tenho dúvidas sobre a loja J FIGHT.')}',
     );
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -263,39 +264,10 @@ class _LojaPublicaScreenState extends State<LojaPublicaScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const SizedBox(height: 40),
-                        Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.2),
-                                blurRadius: 16,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(50),
-                            child: Image.asset(
-                              'assets/images/logo.png',
-                              width: 76,
-                              height: 76,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                width: 76,
-                                height: 76,
-                                decoration: BoxDecoration(
-                                  color: Colors.white24,
-                                  borderRadius: BorderRadius.circular(50),
-                                ),
-                                child: const Icon(Icons.sports_martial_arts, size: 40, color: Colors.white),
-                              ),
-                            ),
-                          ),
-                        ),
+                        const JFightLogoImage(height: 88, width: 88, borderRadius: 16),
                         const SizedBox(height: 12),
                         const Text(
-                          'Loja SM BJJ',
+                          'Loja J FIGHT',
                           style: TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.w900,
@@ -690,10 +662,10 @@ class _LojaFooter extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(Icons.sports_martial_arts, size: 32, color: verdeEscuro.withValues(alpha: 0.8)),
+          const JFightLogoImage(height: 64, width: 64, borderRadius: 12),
           const SizedBox(height: 10),
           const Text(
-            'CT SM BJJ',
+            'J FIGHT',
             style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: verdeEscuro),
           ),
           const SizedBox(height: 4),

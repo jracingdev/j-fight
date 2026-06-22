@@ -337,7 +337,7 @@ class _CriarContaScreenState extends State<CriarContaScreen> {
                                 ),
                               ),
                               Text(
-                                ' — declaro aptidão para Jiu-Jitsu, assumo os riscos da prática e isento a Marinho Team Jiu-Jitsu. '
+                                ' — declaro aptidão para Jiu-Jitsu, assumo os riscos da prática e isento a J FIGHT Academia. '
                                 'Sou maior de 18 anos ou tenho autorização do responsável legal.',
                                 style: TextStyle(fontSize: 11, color: Colors.grey.shade700, height: 1.35),
                               ),

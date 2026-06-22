@@ -10,7 +10,7 @@ bool urlEhLojaPublica(Uri uri) {
   return v == 'publica' || v == '1' || v == 'true';
 }
 
-/// Na web, visitantes veem a loja na home (smbjj.com.br).
+/// Na web, visitantes veem a loja na home (jracingdev.github.io/j-fight).
 bool get lojaComoHomeWeb => isWebApp;
 
 void sincronizarLojaPublicaDaUrl() {

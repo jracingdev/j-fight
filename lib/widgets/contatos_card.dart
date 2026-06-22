@@ -48,7 +48,7 @@ class ContatosCard extends StatelessWidget {
             _ContatoTile(
               icon: Icons.camera_alt_outlined,
               iconColor: const Color(0xFFE1306C),
-              label: 'Instagram — Studio',
+              label: 'Instagram — Academia',
               subtitle: '@$studioInstagram',
               onTap: () => _abrir(Uri.parse('https://instagram.com/$studioInstagram')),
             ),

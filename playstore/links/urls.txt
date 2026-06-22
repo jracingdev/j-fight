@@ -1,0 +1,8 @@
+Site principal: https://jracingdev.github.io/j-fight/
+Loja pública: https://jracingdev.github.io/j-fight/
+Política de privacidade (Play): https://jracingdev.github.io/j-fight/politica-privacidade.html
+Termos de uso (Play): https://jracingdev.github.io/j-fight/termos-de-uso.html
+Desenvolvedor: https://jracing.dev.br
+GitHub (organização/repo): https://github.com/jracingdev/j-fight
+Supabase project ref: [preencher sem token/segredo]
+WhatsApp da academia: https://wa.me/5521000000000

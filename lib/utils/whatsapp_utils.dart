@@ -43,7 +43,7 @@ String _buildMessage({
   switch (tipo) {
     case 'aviso1':
       return 'Olá, $nome! 😊\n\n'
-          'Passando para lembrar que a mensalidade de *$mesAno* da SM BJJ está chegando! 🥋\n\n'
+          'Passando para lembrar que a mensalidade de *$mesAno* da J FIGHT está chegando! 🥋\n\n'
           'O vencimento é dia *$diaVencimento*.\n'
           'Valor: *R\$ $valorStr*\n\n'
           'Qualquer dúvida, estamos à disposição! 💪';
@@ -57,14 +57,14 @@ String _buildMessage({
 
     case 'aviso_extra':
       return 'Olá, $nome! 👋\n\n'
-          'Lembrete da SM BJJ: mensalidade de *$mesAno*.\n'
+          'Lembrete da J FIGHT: mensalidade de *$mesAno*.\n'
           'Vencimento dia *$diaVencimento*.\n'
           'Valor: *R\$ $valorStr*\n\n'
           'Qualquer dúvida, fale conosco! 🥋';
 
     case 'vencimento':
       return 'Olá, $nome! ⚠️\n\n'
-          'Hoje é o *dia do vencimento* da mensalidade de *$mesAno* da SM BJJ.\n\n'
+          'Hoje é o *dia do vencimento* da mensalidade de *$mesAno* da J FIGHT.\n\n'
           'Valor: *R\$ $valorStr*\n\n'
           '⚠️ *Atenção:* O pagamento após o vencimento resultará na '
           '*perda da promoção naquele mês*.\n\n'

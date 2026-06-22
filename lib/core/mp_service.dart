@@ -70,7 +70,7 @@ class MercadoPagoService {
       'payment_methods': {
         'installments': 1,
       },
-      'statement_descriptor': 'SM BJJ',
+      'statement_descriptor': 'J FIGHT',
       if (metadados != null) 'metadata': metadados,
       'notification_url': _webhookUrl,
     };

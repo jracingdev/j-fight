@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../utils/image_utils.dart';
 import '../../utils/aluno_foto_util.dart';
@@ -22,7 +22,7 @@ import '../../utils/scroll_padding.dart';
 import '../../widgets/faixa_ilustrada.dart';
 import '../sobre_screen.dart';
 import '../legal/legal_document_screen.dart';
-import '../../widgets/gft_logo_image.dart';
+import '../../widgets/jfight_logo_image.dart';
 import '../alunos/meu_cadastro_screen.dart';
 import '../../widgets/turmas_aluno_card.dart';
 import '../../widgets/contatos_card.dart';
@@ -207,7 +207,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
       switch (resultado) {
         case BackupRestoreResult.sucesso: msg = 'Dados restaurados com sucesso!'; cor = verdeEscuro; break;
         case BackupRestoreResult.cancelado: msg = 'Operação cancelada.'; cor = Colors.grey; break;
-        case BackupRestoreResult.arquivoInvalido: msg = 'Arquivo inválido — não é um backup do CT SM BJJ.'; cor = Colors.red; break;
+        case BackupRestoreResult.arquivoInvalido: msg = 'Arquivo inválido — não é um backup do J FIGHT.'; cor = Colors.red; break;
         default: msg = 'Erro ao restaurar. Tente novamente.'; cor = Colors.red;
       }
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: cor));
@@ -381,16 +381,13 @@ class _PerfilScreenState extends State<PerfilScreen> {
                     ),
                     if (_alertasSom || _alertasVisual)
                       ListTile(
-                        leading: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.asset('assets/images/logo.png', width: 32, height: 32, fit: BoxFit.cover),
-                        ),
+                        leading: const JFightLogoImage(height: 32, width: 32, borderRadius: 8),
                         title: const Text('Testar alerta'),
                         subtitle: const Text('Ouve e vê como ficará a notificação'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => AppAlertService.alertar(
                           context,
-                          titulo: 'CT SM BJJ',
+                          titulo: 'J FIGHT',
                           mensagem: 'Exemplo de alerta com som e logo da academia.',
                           cor: verdeEscuro,
                         ),
@@ -491,11 +488,11 @@ class _PerfilScreenState extends State<PerfilScreen> {
               ],
               const SizedBox(height: 20),
 
-              // ── Credenciamento GFT ─────────────────
+              // ── Academia ─────────────────
               Card(child: Padding(
                 padding: const EdgeInsets.all(14),
                 child: Column(children: [
-                  const GftLogoImage(height: 72),
+                  const JFightLogoImage(height: 72),
                   const SizedBox(height: 8),
                   const Text(academiaCredenciada,
                       style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: verdeEscuro),

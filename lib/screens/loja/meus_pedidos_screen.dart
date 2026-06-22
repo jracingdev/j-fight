@@ -271,7 +271,7 @@ class _MeuPedidoCardState extends State<_MeuPedidoCard> {
             // Botão WhatsApp professor
             OutlinedButton.icon(
               onPressed: () async {
-                const professorTel = '5521975396996';
+                final professorTel = professorTelefone;
                 final msg = '📦 Olá professor! Gostaria de saber sobre meu pedido:\n\n'
                     '*${p.produtoNome}*${p.varianteLabel.isNotEmpty ? ' (${p.varianteLabel})' : ''}\n'
                     'Status atual: ${p.statusTexto}\n\n'

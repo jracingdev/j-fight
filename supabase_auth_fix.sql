@@ -1,5 +1,5 @@
 -- ============================================================
--- CT SM BJJ — Correção de roles no cadastro (execute no Supabase)
+-- J FIGHT — Correção de roles no cadastro (execute no Supabase)
 -- ============================================================
 
 create or replace function public.handle_new_user()
@@ -8,7 +8,7 @@ declare
   v_email text := lower(trim(coalesce(new.email, '')));
   v_role text := 'aluno';
 begin
-  if v_email = 'admin@smbj.com' then
+  if v_email = 'admin@jfight.app' then
     v_role := 'admin';
   end if;
 
@@ -33,10 +33,10 @@ begin
 end;
 $$ language plpgsql security definer set search_path = public;
 
--- Corrige contas que ficaram admin por engano (mantém só admin@smbj.com)
+-- Corrige contas que ficaram admin por engano (mantém só admin@jfight.app)
 update public.usuarios
 set role = 'aluno'
 where role = 'admin'
-  and lower(trim(email)) <> 'admin@smbj.com';
+  and lower(trim(email)) <> 'admin@jfight.app';
 
 select 'Auth fix aplicado' as status;

@@ -1,5 +1,5 @@
 -- ============================================================
--- CT SM BJJ — Migração v1.6 (execute no SQL Editor do Supabase)
+-- J FIGHT — Migração v1.6 (execute no SQL Editor do Supabase)
 -- Inclui: campos aluno, RLS colegas, quadro de medalhas
 -- ============================================================
 

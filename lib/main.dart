@@ -43,7 +43,7 @@ void main() async {
   runApp(
     ChangeNotifierProvider.value(
       value: authProvider,
-      child: const CtSmBjjApp(),
+      child: const JFightApp(),
     ),
   );
 }

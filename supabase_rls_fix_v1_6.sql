@@ -1,5 +1,5 @@
 -- ============================================================
--- CT SM BJJ — CORREÇÃO URGENTE RLS v1.6
+-- J FIGHT — CORREÇÃO URGENTE RLS v1.6
 -- Execute AGORA no SQL Editor do Supabase
 --
 -- Problema: política "Aluno vê colegas de turma" consultava

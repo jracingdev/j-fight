@@ -9,6 +9,7 @@ import '../../core/auth/credential_remember_service.dart';
 import '../../core/app_version.dart';
 import '../../core/constants.dart';
 import '../../core/theme.dart';
+import '../../widgets/jfight_logo_image.dart';
 import '../legal/legal_document_screen.dart';
 import 'criar_conta_screen.dart';
 
@@ -341,7 +342,7 @@ class _LoginScreenState extends State<LoginScreen> {
         title: const Text('Biometria no celular'),
         content: const Text(
           'No navegador a biometria não está disponível.\n\n'
-          '• Instale o app CT SM BJJ no Android e ative após o primeiro login com senha.\n'
+          '• Instale o app J FIGHT no Android e ative após o primeiro login com senha.\n'
           '• Ou marque "Lembrar e-mail e senha" abaixo para entrar mais rápido na web.',
         ),
         actions: [
@@ -442,7 +443,7 @@ class _LoginScreenState extends State<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [verdeEscuro, Color(0xFF145521)],
+            colors: [verdeEscuro, Color(0xFF7F1D1D)],
           ),
         ),
         child: SafeArea(
@@ -467,31 +468,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(50),
-                  child: Image.asset(
-                    'assets/images/logo.png',
-                    width: 90,
-                    height: 90,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(50),
-                      ),
-                      child: const Icon(Icons.sports_martial_arts, size: 48, color: Colors.white),
-                    ),
-                  ),
-                ),
+                const JFightLogoImage(height: 110, width: 110, borderRadius: 20),
                 const SizedBox(height: 12),
                 const Text(
-                  'CT SM BJJ',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white),
-                ),
-                const Text(
-                  'Academia de Jiu-Jitsu',
+                  'Academia de Artes Marciais',
                   style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
                 const SizedBox(height: 6),
@@ -664,7 +644,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'SM BJJ © 2018 · Todos os direitos reservados',
+                  'J FIGHT © $academiaFundacao · Todos os direitos reservados',
                   style: TextStyle(color: Colors.white38, fontSize: 11),
                 ),
               ],

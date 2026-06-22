@@ -1,0 +1,14 @@
+App: J FIGHT Academia
+Pacote Android (applicationId): com.jracingdev.jfight
+Namespace Android: com.jracingdev.jfight
+Versão (pubspec): 1.7.22+53
+minSdk: 23
+compileSdk: 36
+targetSdk: flutter.targetSdkVersion
+
+Google OAuth / SHA:
+1) Gere o upload keystore (ver signing.md)
+2) Obtenha SHA-1 e SHA-256:
+   keytool -list -v -keystore <caminho-do-keystore> -alias <alias>
+3) Cadastre no Google Cloud Console e Supabase Auth (provider Google)
+4) Depois habilite Play App Signing e inclua também SHA do certificado da Google Play

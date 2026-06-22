@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/auth/auth_provider.dart';
+import '../../widgets/jfight_logo_image.dart';
 import '../../core/theme.dart';
 import '../../models/aluno.dart';
 import '../../models/mensalidade.dart';
@@ -138,10 +139,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Row(children: [
-          const Icon(Icons.sports_martial_arts, color: Colors.white),
+          const JFightLogoImage(height: 36, width: 36, borderRadius: 8),
           const SizedBox(width: 8),
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('SM BJJ', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+            const Text('J FIGHT', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
             Text(isAdmin ? 'Painel Admin' : 'Bem-vindo!', style: const TextStyle(fontSize: 11, color: Colors.white70)),
           ]),
         ]),

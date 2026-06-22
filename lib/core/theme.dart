@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
-const Color verdeEscuro = Color(0xFF1a6b2a);
-const Color verdeMedio = Color(0xFF2d8a3e);
-const Color verdeClaro = Color(0xFF4caf50);
+// Paleta J FIGHT — vermelho combate, preto e dourado
+const Color verdeEscuro = Color(0xFFB91C1C);
+const Color verdeMedio = Color(0xFFDC2626);
+const Color verdeClaro = Color(0xFFEF4444);
+const Color corFundoEscuro = Color(0xFF1A1A2E);
+const Color corDestaque = Color(0xFFF59E0B);
 
 ThemeData appTheme() {
   return ThemeData(
@@ -10,7 +13,8 @@ ThemeData appTheme() {
     colorScheme: ColorScheme.fromSeed(
       seedColor: verdeEscuro,
       primary: verdeEscuro,
-      secondary: verdeMedio,
+      secondary: corDestaque,
+      surface: corFundoEscuro,
     ),
     appBarTheme: const AppBarTheme(
       backgroundColor: verdeEscuro,

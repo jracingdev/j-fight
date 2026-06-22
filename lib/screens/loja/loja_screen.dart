@@ -1,4 +1,4 @@
-﻿import 'dart:typed_data';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +14,7 @@ import '../../core/loja/loja_publica_url.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/constants.dart';
 import '../../core/mp_service.dart';
+import '../../widgets/jfight_logo_image.dart';
 import '../../core/theme.dart';
 import '../../models/pedido.dart';
 import '../../models/produto.dart';
@@ -151,10 +152,7 @@ class _LojaScreenState extends State<LojaScreen> {
       builder: (ctx) => AlertDialog(
         title: Row(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.asset('assets/images/logo.png', width: 36, height: 36, fit: BoxFit.cover),
-            ),
+            const JFightLogoImage(height: 36, width: 36, borderRadius: 8),
             const SizedBox(width: 10),
             const Expanded(child: Text('Loja pública online')),
           ],
@@ -163,7 +161,7 @@ class _LojaScreenState extends State<LojaScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-                        const Text('Compartilhe o site da loja (smbjj.com.br) — visitantes compram sem login; alunos entram pelo botão Entrar:'),
+                        const Text('Compartilhe o site da loja (jracingdev.github.io/j-fight) — visitantes compram sem login; alunos entram pelo botão Entrar:'),
             const SizedBox(height: 10),
             SelectableText(link, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
             const SizedBox(height: 8),
@@ -174,7 +172,7 @@ class _LojaScreenState extends State<LojaScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Fechar')),
           FilledButton.icon(
             onPressed: () {
-              Share.share('Loja SM BJJ — compre kimonos e produtos:\n$link');
+              Share.share('Loja J FIGHT — compre kimonos e produtos:\n$link');
             },
             icon: const Icon(Icons.share, size: 18),
             label: const Text('Compartilhar'),
@@ -214,7 +212,7 @@ class _LojaScreenState extends State<LojaScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Loja SM BJJ', style: TextStyle(fontSize: 18)),
+            const Text('Loja J FIGHT', style: TextStyle(fontSize: 18)),
             Text(AppVersion.label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
           ],
         ),
@@ -315,7 +313,7 @@ class _LojaScreenState extends State<LojaScreen> {
                               style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: verdeEscuro),
                             ),
                             Text(
-                              'Venda online em smbjj.com.br — visitantes compram sem login',
+                              'Venda online em jracingdev.github.io/j-fight — visitantes compram sem login',
                               style: TextStyle(fontSize: 11, color: Colors.grey.shade700, height: 1.3),
                             ),
                           ],
@@ -469,7 +467,7 @@ class _LojaScreenState extends State<LojaScreen> {
 
     if (forma == 'mercadopago') {
       final pref = await MercadoPagoService.instance.criarCobranca(
-        titulo: 'Pedido ${p.nome} - SM BJJ',
+        titulo: 'Pedido ${p.nome} - J FIGHT',
         valor: total,
         emailPagador: user.email,
         descricao: '${p.nome}${cor != null || tamanho != null ? ' (${[if (cor != null) cor, if (tamanho != null) tamanho].join(' / ')})' : ''} — Qtd: $qtd',

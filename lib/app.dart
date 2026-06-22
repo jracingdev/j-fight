@@ -10,14 +10,14 @@ import 'screens/auth/login_screen.dart';
 import 'screens/loja/loja_publica_screen.dart';
 import 'widgets/cadastro_gate.dart';
 
-class CtSmBjjApp extends StatefulWidget {
-  const CtSmBjjApp({super.key});
+class JFightApp extends StatefulWidget {
+  const JFightApp({super.key});
 
   @override
-  State<CtSmBjjApp> createState() => _CtSmBjjAppState();
+  State<JFightApp> createState() => _JFightAppState();
 }
 
-class _CtSmBjjAppState extends State<CtSmBjjApp> {
+class _JFightAppState extends State<JFightApp> {
   @override
   void initState() {
     super.initState();
@@ -27,7 +27,7 @@ class _CtSmBjjAppState extends State<CtSmBjjApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'CT SM BJJ',
+      title: 'J FIGHT',
       theme: appTheme(),
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [

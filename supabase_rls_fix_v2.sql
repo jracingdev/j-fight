@@ -1,5 +1,5 @@
 -- ============================================================
--- CT SM BJJ — CORREÇÃO RLS v2 (execute TODO de uma vez)
+-- J FIGHT — CORREÇÃO RLS v2 (execute TODO de uma vez)
 --
 -- A v1 ainda consultava aluno_turmas dentro das políticas → 500.
 -- Esta versão usa funções SECURITY DEFINER (sem recursão).

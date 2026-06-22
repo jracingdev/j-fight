@@ -9,7 +9,7 @@ import 'oauth_config.dart';
 
 /// Apenas estes e-mails podem ter role admin (case-insensitive).
 const Set<String> kAdminEmails = {
-  'admin@smbj.com',
+  'admin@jfight.app',
 };
 
 class AuthService {
@@ -99,7 +99,7 @@ class AuthService {
         status: AuthStatus.oauthStarted,
         message: isWebApp
             ? 'Conclua o login no navegador e volte para o site.'
-            : 'Conclua o login no navegador. Ao terminar, toque em "Abrir no app" ou volte manualmente ao CT SM BJJ.',
+            : 'Conclua o login no navegador. Ao terminar, toque em "Abrir no app" ou volte manualmente ao J FIGHT.',
       );
     } on AuthException catch (e) {
       return AuthResult(status: AuthStatus.error, message: _mensagemAuth(e));

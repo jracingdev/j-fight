@@ -21,5 +21,5 @@ class AppVersion {
   static String get build => _build;
   static String get label => 'v$_version (b$_build)';
   static String get short => 'v$_version';
-  static String get packageName => 'com.smbijj.ct_sm_bjj';
+  static String get packageName => 'com.jracingdev.jfight';
 }

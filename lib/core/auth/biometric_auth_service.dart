@@ -73,7 +73,7 @@ class BiometricAuthService {
     try {
       if (!await biometriaDisponivel) return false;
       return await _localAuth.authenticate(
-        localizedReason: 'Use sua digital ou rosto para entrar no CT SM BJJ',
+        localizedReason: 'Use sua digital ou rosto para entrar no J FIGHT',
         options: const AuthenticationOptions(
           biometricOnly: false,
           stickyAuth: true,

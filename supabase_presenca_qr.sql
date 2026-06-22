@@ -1,5 +1,5 @@
 -- ============================================================
--- CT SM BJJ — Presença por QR Code
+-- J FIGHT — Presença por QR Code
 -- Execute após supabase_presencas.sql e supabase_rls_fix_v2.sql
 -- (usa gen_random_uuid — não requer extensão pgcrypto)
 -- ============================================================

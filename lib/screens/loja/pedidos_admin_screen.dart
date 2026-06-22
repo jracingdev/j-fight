@@ -182,7 +182,7 @@ class _PedidoAdminCardState extends State<_PedidoAdminCard> {
           '*${widget.pedido.produtoNome}*\n\n'
           'Status: ${Pedido.statusLabel[novo]}\n'
           '${_msgExtra(novo, widget.pedido)}\n\n'
-          'SM BJJ 🥋';
+          'J FIGHT 🥋';
       final num = tel.replaceAll(RegExp(r'\D'), '');
       final uri = Uri.parse('https://wa.me/55$num?text=${Uri.encodeComponent(msg)}');
       if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -202,7 +202,7 @@ class _PedidoAdminCardState extends State<_PedidoAdminCard> {
   Future<void> _gerarLinkMP() async {
     setState(() => _loading = true);
     final pref = await MercadoPagoService.instance.criarCobranca(
-      titulo: 'Pedido ${widget.pedido.produtoNome} - SM BJJ',
+      titulo: 'Pedido ${widget.pedido.produtoNome} - J FIGHT',
       valor: widget.pedido.valorTotal,
       emailPagador: widget.pedido.alunoEmail,
       descricao: '${widget.pedido.produtoNome}${widget.pedido.varianteLabel.isNotEmpty ? ' (${widget.pedido.varianteLabel})' : ''} - Qtd: ${widget.pedido.quantidade}',
@@ -468,7 +468,7 @@ class _PedidoAdminCardState extends State<_PedidoAdminCard> {
               ),
               if (p.alunoTelefone != null) OutlinedButton.icon(
                 onPressed: () async {
-                  final msg = '📦 Olá ${p.alunoNome}! Temos uma atualização do seu pedido *${p.produtoNome}*. Entre em contato conosco. SM BJJ 🥋';
+                  final msg = '📦 Olá ${p.alunoNome}! Temos uma atualização do seu pedido *${p.produtoNome}*. Entre em contato conosco. J FIGHT 🥋';
                   final num = p.alunoTelefone!.replaceAll(RegExp(r'\D'), '');
                   final uri = Uri.parse('https://wa.me/55$num?text=${Uri.encodeComponent(msg)}');
                   if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
