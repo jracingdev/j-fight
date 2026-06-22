@@ -1,5 +1,7 @@
 # Deploy no servidor 56.125.221.106 (PostgreSQL já instalado)
 
+> **Guia completo app + web:** [`../DEPLOY-APP-E-WEB.md`](../DEPLOY-APP-E-WEB.md)
+
 ## 1. Security Group AWS
 
 Libere no Security Group do EC2:

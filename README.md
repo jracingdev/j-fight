@@ -1,60 +1,47 @@
 # J FIGHT
 
-App Flutter de gestão de academia de artes marciais — **projeto demonstração** baseado em um modelo real, com identidade visual e dados fictícios.
+App Flutter de gestão de academia de artes marciais — **projeto demonstração**.
 
-Repositório: https://github.com/jracingdev/j-fight.git
+| O quê | URL |
+|-------|-----|
+| Repositório | https://github.com/jracingdev/j-fight.git |
+| Web (GitHub Pages) | https://jracingdev.github.io/j-fight/ |
+| API + Postgres | AWS EC2 (ver guia abaixo) |
 
-Web (GitHub Pages): https://jracingdev.github.io/j-fight/
+## Deploy completo (app + web)
 
-## Identidade visual
+**Guia passo a passo:** [`deploy/DEPLOY-APP-E-WEB.md`](deploy/DEPLOY-APP-E-WEB.md)
 
-| Elemento | Valor |
-|----------|-------|
-| Nome | **J FIGHT** |
-| Cor primária | `#B91C1C` (vermelho combate) |
-| Cor de fundo | `#1A1A2E` (preto grafite) |
-| Cor destaque | `#F59E0B` (dourado) |
-| Logo | `assets/images/logo.png` (origem: `logo dark LOGO J FIGHT.png`) |
+Resumo:
+- **AWS:** PostgreSQL + API Node (`api/`) + HTTPS com subdomínio
+- **GitHub Pages:** site Flutter web
+- **APK:** build no PC apontando para a mesma API
+
+```powershell
+# No PC, após API no ar com HTTPS:
+$env:JFIGHT_API_BASE = "https://api.seudominio.com.br"
+.\deploy\aws\build-apk-servidor.ps1
+.\deploy\aws\build-web-github-pages.ps1
+.\deploy\aws\publicar-github-pages.ps1
+```
 
 ## Dados de demonstração
 
-Para popular o app com uma academia movimentada (53 alunos, turmas, mensalidades, presenças, medalhas, loja e pedidos):
+No servidor (PostgreSQL), após `postgres/install.sql`:
 
-1. No [Supabase SQL Editor](https://supabase.com/dashboard/project/zhjnxspunbtyqhlyliuw/sql), execute **`supabase_demo_data.sql`**.
-2. Crie o admin em **Authentication → Users**: `admin@jfight.app` (se ainda não existir).
-3. Execute **`supabase_loja_catalogo.sql`** para o catálogo da loja (14 produtos com fotos).
-4. *(Opcional)* Crie 1–3 alunos demo no Auth com os mesmos e-mails do script (ex.: `demo.marcos.silva@jfight.app`, senha `Demo@2026`) para testar login de aluno.
+```bash
+psql "postgresql://jfight:SENHA@localhost:5432/jfight" -f supabase_demo_data.sql
+psql "postgresql://jfight:SENHA@localhost:5432/jfight" -f supabase_loja_catalogo.sql
+```
 
-Contas demo usam e-mails `demo.*@jfight.app`. Reexecutar o script limpa e recria os dados demo.
+Login admin: **admin@jfight.app** / **Demo@2026**
 
-
-1. Execute `supabase_setup.sql` no SQL Editor do projeto.
-2. Execute `supabase_turmas.sql` (turmas e vínculo aluno ↔ turma).
-3. Opcional: `supabase_pedidos.sql` para a loja.
-4. Crie o usuário admin em **Authentication → Users** (`admin@jfight.app`).
-
-Credenciais do app estão em `lib/core/supabase_service.dart` (chave publishable — uso client-side com RLS).
-
-## Versão atual
-
-**1.0.0** (build 1) — fork de demonstração com rebranding J FIGHT.
-
-## Executar
+## Executar local (desenvolvimento)
 
 ```bash
 flutter pub get
-flutter run
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
 ```
 
-## Build web (GitHub Pages)
+Mais detalhes: [`API_SETUP.md`](API_SETUP.md) · Servidor `56.125.221.106`: [`deploy/aws/SERVIDOR-56.125.221.106.md`](deploy/aws/SERVIDOR-56.125.221.106.md)
 
-```bash
-flutter build web --release --base-href "/j-fight/"
-```
-
-## Instalar no celular
-
-```bash
-flutter build apk --release
-flutter install
-```
