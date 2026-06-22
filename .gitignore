@@ -43,3 +43,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Artefatos locais de release / adb (nao versionar)
+/*.apk
+/_adb_state.txt
+/_do_install.ps1
+/_install_apk.bat
