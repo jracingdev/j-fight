@@ -1,13 +1,14 @@
 ﻿import '../core/api/api_client.dart';
+import '../core/api/api_errors.dart';
 import '../models/aluno.dart';
 
 class AlunoRepository {
   final _api = ApiClient.instance;
 
   Future<List<Aluno>> listar({bool? ativo}) async {
-    final data = await _api.get('/alunos', query: {
+    final data = await comTimeout(_api.get('/alunos', query: {
       if (ativo != null) 'ativo': ativo.toString(),
-    });
+    }));
     return (data as List).map((m) => Aluno.fromMap(Map<String, dynamic>.from(m))).toList();
   }
 

@@ -1,7 +1,7 @@
 ﻿name: j_fight
 description: J FIGHT - GestÃ£o de Academia de Artes Marciais (demonstraÃ§Ã£o)
 publish_to: 'none'
-version: 1.1.0+2
+version: 1.1.0+3
 
 environment:
   sdk: '>=3.3.0 <4.0.0'

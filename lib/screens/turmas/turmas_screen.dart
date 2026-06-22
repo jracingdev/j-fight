@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/api/api_errors.dart';
 import '../../core/theme.dart';
 import '../../models/turma.dart';
 import '../../repositories/turma_repository.dart';
@@ -16,6 +17,7 @@ class _TurmasScreenState extends State<TurmasScreen> {
   final _repo = TurmaRepository();
   List<Turma> _turmas = [];
   bool _loading = true;
+  String? _erro;
 
   @override
   void initState() {
@@ -24,17 +26,19 @@ class _TurmasScreenState extends State<TurmasScreen> {
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _erro = null;
+    });
     try {
       _turmas = await _repo.listar(apenasAtivas: false);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao carregar turmas: $e'), backgroundColor: Colors.red),
-        );
+        setState(() => _erro = mensagemErroApi(e, recurso: 'as turmas'));
       }
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
-    if (mounted) setState(() => _loading = false);
   }
 
   Future<void> _editarHorario(Turma turma) async {
@@ -169,6 +173,26 @@ class _TurmasScreenState extends State<TurmasScreen> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: verdeEscuro))
+          : _erro != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
+                        const SizedBox(height: 12),
+                        Text(_erro!, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey.shade700)),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: _load,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Tentar novamente'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
           : _turmas.isEmpty
               ? Center(
                   child: Text(

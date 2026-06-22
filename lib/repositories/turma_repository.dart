@@ -7,7 +7,7 @@ class TurmaRepository {
   final _api = ApiClient.instance;
 
   Future<List<Turma>> listar({bool apenasAtivas = true}) async {
-    final data = await _api.get('/turmas', query: {'apenas_ativas': apenasAtivas.toString()});
+    final data = await comTimeout(_api.get('/turmas', query: {'apenas_ativas': apenasAtivas.toString()}));
     return (data as List).map((m) => Turma.fromMap(Map<String, dynamic>.from(m))).toList();
   }
 

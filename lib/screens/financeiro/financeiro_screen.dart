@@ -65,14 +65,6 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> with SingleTickerPr
       _erro = null;
     });
 
-    // Sincroniza status MP em background antes de carregar a tela
-    int marcadasAuto = 0;
-    if (sincronizarMP) {
-      try {
-        marcadasAuto = await _mensRepo.sincronizarStatusMP();
-      } catch (_) {}
-    }
-
     try {
       final results = await Future.wait([
         _mensRepo.listar(mes: _mes, ano: _ano),
@@ -83,39 +75,47 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> with SingleTickerPr
         _turmaRepo.alunoIdsPorTodasTurmas(),
         MercadoPagoService.instance.getAccessToken(),
       ]);
-      if (mounted) {
-        final turmas = results[4] as List<Turma>;
-        var mapTurma = results[5] as Map<String, List<String>>;
-        for (final t in turmas) {
-          mapTurma.putIfAbsent(t.id, () => []);
-        }
-        final token = results[6] as String?;
-        setState(() {
-          _mensalidades = results[0] as List<Mensalidade>;
-          _mensalidadesAno = results[1] as List<Mensalidade>;
-          _alunos = results[2] as List<Aluno>;
-          _config = results[3] as FinanceiroConfig;
-          _turmas = turmas;
-          _alunoIdsPorTurma = mapTurma;
-          _mpConfigurado = token != null && token.isNotEmpty;
-          _loading = false;
-        });
-        if (marcadasAuto > 0) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('✅ $marcadasAuto pagamento(s) confirmado(s) automaticamente pelo Mercado Pago!'),
-            backgroundColor: verdeEscuro,
-            duration: const Duration(seconds: 4),
-          ));
-        }
+      if (!mounted) return;
+      final turmas = results[4] as List<Turma>;
+      var mapTurma = results[5] as Map<String, List<String>>;
+      for (final t in turmas) {
+        mapTurma.putIfAbsent(t.id, () => []);
+      }
+      final token = results[6] as String?;
+      setState(() {
+        _mensalidades = results[0] as List<Mensalidade>;
+        _mensalidadesAno = results[1] as List<Mensalidade>;
+        _alunos = results[2] as List<Aluno>;
+        _config = results[3] as FinanceiroConfig;
+        _turmas = turmas;
+        _alunoIdsPorTurma = mapTurma;
+        _mpConfigurado = token != null && token.isNotEmpty;
+      });
+      if (sincronizarMP) {
+        _sincronizarMpEmBackground();
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _erro = mensagemErroApi(e, recurso: 'o financeiro');
-        });
-      }
+      if (!mounted) return;
+      setState(() => _erro = mensagemErroApi(e, recurso: 'o financeiro'));
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _sincronizarMpEmBackground() async {
+    try {
+      final marcadasAuto = await comTimeout(
+        _mensRepo.sincronizarStatusMP(),
+        timeout: const Duration(seconds: 20),
+      );
+      if (!mounted || marcadasAuto <= 0) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('✅ $marcadasAuto pagamento(s) confirmado(s) automaticamente pelo Mercado Pago!'),
+        backgroundColor: verdeEscuro,
+        duration: const Duration(seconds: 4),
+      ));
+      _load(sincronizarMP: false);
+    } catch (_) {}
   }
 
   List<Aluno> get _alunosCobranca =>

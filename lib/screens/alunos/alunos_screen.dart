@@ -50,32 +50,31 @@ class AlunosScreenState extends State<AlunosScreen> {
       _erro = null;
     });
     try {
-      final lista = await _repo.listar();
-      final turmas = await _turmaRepo.listar();
+      final results = await Future.wait([
+        _repo.listar(),
+        _turmaRepo.listar(),
+      ]);
+      final lista = results[0] as List<Aluno>;
+      final turmas = results[1] as List<Turma>;
       Map<String, List<Turma>> map = {};
       try {
         map = await _turmaRepo.turmasPorTodosAlunos();
       } catch (_) {}
       final qtdPendentes = lista.where((a) => !a.cadastroValidado).length;
-      if (mounted) {
-        setState(() {
-          _alunos = lista;
-          _turmas = turmas;
-          _turmasPorAluno = map;
-          _loading = false;
-          // Cadastros novos ficam com ativo=false; filtro "Ativos" os escondia.
-          if (qtdPendentes > 0 && _filtroStatus == 'ativo') {
-            _filtroStatus = 'pendente';
-          }
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _alunos = lista;
+        _turmas = turmas;
+        _turmasPorAluno = map;
+        if (qtdPendentes > 0 && _filtroStatus == 'ativo') {
+          _filtroStatus = 'pendente';
+        }
+      });
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _erro = mensagemErroApi(e, recurso: 'os alunos');
-        });
-      }
+      if (!mounted) return;
+      setState(() => _erro = mensagemErroApi(e, recurso: 'os alunos'));
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
