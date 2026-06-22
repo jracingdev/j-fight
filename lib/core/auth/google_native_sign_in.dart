@@ -1,15 +1,12 @@
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../app_platform.dart';
-import '../supabase_service.dart';
 import 'oauth_config.dart';
 
-/// Login Google nativo no Android/iOS (sem navegador nem deep link).
+/// Login Google nativo no Android/iOS — retorna idToken para a API.
 class GoogleNativeSignIn {
   static bool _initialized = false;
 
-  /// Só no APK/IPA — na web quebra o boot se inicializar GoogleSignIn.
   static bool get disponivel =>
       isNativeApp && OAuthConfig.googleWebClientId.trim().isNotEmpty;
 
@@ -21,8 +18,8 @@ class GoogleNativeSignIn {
     _initialized = true;
   }
 
-  /// Retorna [AuthResponse] em sucesso; null se o usuário cancelou.
-  static Future<AuthResponse?> signIn() async {
+  /// Retorna idToken em sucesso; null se o usuário cancelou.
+  static Future<String?> signIn() async {
     if (!disponivel) return null;
 
     await ensureInitialized();
@@ -34,22 +31,13 @@ class GoogleNativeSignIn {
     final account = await GoogleSignIn.instance.authenticate();
     final idToken = account.authentication.idToken;
     if (idToken == null) {
-      throw StateError('Google não retornou idToken. Verifique o Web Client ID no Supabase/Google Cloud.');
+      throw StateError('Google não retornou idToken. Verifique o Web Client ID no Google Cloud.');
     }
 
-    final authorization = await account.authorizationClient
+    await account.authorizationClient
             .authorizationForScopes(const ['email', 'profile']) ??
         await account.authorizationClient.authorizeScopes(const ['email', 'profile']);
 
-    final accessToken = authorization.accessToken;
-    if (accessToken.isEmpty) {
-      throw StateError('Google não retornou accessToken.');
-    }
-
-    return supabase.auth.signInWithIdToken(
-      provider: OAuthProvider.google,
-      idToken: idToken,
-      accessToken: accessToken,
-    );
+    return idToken;
   }
 }

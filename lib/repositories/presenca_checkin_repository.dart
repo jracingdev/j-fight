@@ -1,22 +1,22 @@
-import '../core/supabase_service.dart';
+import '../core/api/api_client.dart';
 import '../models/presenca_token.dart';
 
 class PresencaCheckinRepository {
+  final _api = ApiClient.instance;
+
   Future<PresencaToken> criarToken({
     required String tipo,
     String? turmaId,
   }) async {
-    final data = await supabase.rpc('criar_token_presenca', params: {
-      'p_tipo': tipo,
-      'p_turma_id': turmaId,
+    final data = await _api.post('/presencas/tokens', body: {
+      'tipo': tipo,
+      if (turmaId != null) 'turma_id': turmaId,
     });
     return PresencaToken.fromRpc(Map<String, dynamic>.from(data as Map));
   }
 
   Future<CheckinResult> registrarCheckin(String token) async {
-    final data = await supabase.rpc('registrar_presenca_checkin', params: {
-      'p_token': token,
-    });
+    final data = await _api.post('/presencas/checkin', body: {'token': token});
     return CheckinResult.fromRpc(Map<String, dynamic>.from(data as Map));
   }
 }

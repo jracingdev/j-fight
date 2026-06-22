@@ -1,24 +1,26 @@
-﻿import '../core/supabase_service.dart';
+﻿import '../core/api/api_client.dart';
 import '../models/evento.dart';
 
 class EventoRepository {
+  final _api = ApiClient.instance;
+
   Future<List<Evento>> listar() async {
-    final data = await supabase.from('eventos').select().order('data');
-    return (data as List).map((m) => Evento.fromMap(m)).toList();
+    final data = await _api.get('/eventos');
+    return (data as List).map((m) => Evento.fromMap(Map<String, dynamic>.from(m))).toList();
   }
 
   Future<Evento> criar(Evento e) async {
     final map = e.toMap()..remove('id');
-    final data = await supabase.from('eventos').insert(map).select().single();
-    return Evento.fromMap(data);
+    final data = await _api.post('/eventos', body: map);
+    return Evento.fromMap(Map<String, dynamic>.from(data as Map));
   }
 
   Future<void> atualizar(Evento e) async {
     final map = e.toMap()..remove('id');
-    await supabase.from('eventos').update(map).eq('id', e.id);
+    await _api.patch('/eventos/${e.id}', body: map);
   }
 
   Future<void> deletar(String id) async {
-    await supabase.from('eventos').delete().eq('id', id);
+    await _api.delete('/eventos/$id');
   }
 }

@@ -1,25 +1,27 @@
-import '../core/supabase_service.dart';
+import '../core/api/api_client.dart';
 import '../models/medalha.dart';
 
 class MedalhaRepository {
+  final _api = ApiClient.instance;
+
   Future<List<Medalha>> listar({bool apenasAtivas = true}) async {
-    var query = supabase.from('medalhas').select();
-    if (apenasAtivas) query = query.eq('ativo', true);
-    final data = await query.order('created_at', ascending: false);
-    return (data as List).map((m) => Medalha.fromMap(m)).toList();
+    final data = await _api.get('/medalhas', query: {
+      if (apenasAtivas) 'ativo': 'true',
+    });
+    return (data as List).map((m) => Medalha.fromMap(Map<String, dynamic>.from(m))).toList();
   }
 
   Future<void> criar(Medalha medalha) async {
     final map = medalha.toMap()..remove('id');
-    await supabase.from('medalhas').insert(map);
+    await _api.post('/medalhas', body: map);
   }
 
   Future<void> atualizar(Medalha medalha) async {
     final map = medalha.toMap()..remove('id');
-    await supabase.from('medalhas').update(map).eq('id', medalha.id);
+    await _api.patch('/medalhas/${medalha.id}', body: map);
   }
 
   Future<void> remover(String id) async {
-    await supabase.from('medalhas').delete().eq('id', id);
+    await _api.delete('/medalhas/$id');
   }
 }

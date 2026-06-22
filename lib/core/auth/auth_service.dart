@@ -1,11 +1,9 @@
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../app_platform.dart';
-import '../supabase_service.dart';
 import '../../models/usuario.dart';
+import '../api/api_client.dart';
 import 'auth_result.dart';
 import 'google_native_sign_in.dart';
-import 'oauth_config.dart';
+import '../app_platform.dart';
 
 /// Apenas estes e-mails podem ter role admin (case-insensitive).
 const Set<String> kAdminEmails = {
@@ -15,6 +13,8 @@ const Set<String> kAdminEmails = {
 class AuthService {
   static final AuthService instance = AuthService._();
   AuthService._();
+
+  final _api = ApiClient.instance;
 
   static String roleForEmail(String? email) {
     final normalized = email?.trim().toLowerCase();
@@ -26,23 +26,13 @@ class AuthService {
 
   Future<AuthResult> loginComEmail(String email, String senha) async {
     try {
-      final res = await supabase.auth.signInWithPassword(
-        email: email.trim(),
-        password: senha,
-      );
-      if (res.user == null) {
-        return const AuthResult(status: AuthStatus.error, message: 'Email ou senha incorretos.');
-      }
-      final usuario = await ensurePerfilUsuario(res.user!);
-      if (usuario == null) {
-        return const AuthResult(
-          status: AuthStatus.error,
-          message: 'Não foi possível carregar seu perfil. Tente novamente.',
-        );
-      }
-      return AuthResult(status: AuthStatus.success, usuario: usuario);
-    } on AuthException catch (e) {
-      return AuthResult(status: AuthStatus.error, message: _mensagemAuth(e));
+      final data = await _api.post('/auth/login', body: {
+        'email': email.trim(),
+        'password': senha,
+      }, auth: false);
+      return _processarRespostaAuth(data);
+    } on ApiException catch (e) {
+      return AuthResult(status: AuthStatus.error, message: e.message);
     } catch (e) {
       debugPrint('loginComEmail: $e');
       return const AuthResult(status: AuthStatus.error, message: 'Erro ao entrar. Verifique sua conexão.');
@@ -52,96 +42,40 @@ class AuthService {
   Future<AuthResult> loginComGoogle() async {
     if (isNativeApp && GoogleNativeSignIn.disponivel) {
       try {
-        final response = await GoogleNativeSignIn.signIn();
-        if (response == null) {
+        final idToken = await GoogleNativeSignIn.signIn();
+        if (idToken == null) {
           return const AuthResult(
             status: AuthStatus.error,
             message: 'Login Google cancelado.',
           );
         }
-        final user = response.user;
-        if (user == null) {
-          return const AuthResult(
-            status: AuthStatus.error,
-            message: 'Não foi possível concluir o login Google.',
-          );
-        }
-        final usuario = await ensurePerfilUsuario(user);
-        if (usuario == null) {
-          return const AuthResult(
-            status: AuthStatus.error,
-            message: 'Login ok, mas o perfil não carregou. Tente novamente.',
-          );
-        }
-        return AuthResult(status: AuthStatus.success, usuario: usuario);
-      } on AuthException catch (e) {
-        return AuthResult(status: AuthStatus.error, message: _mensagemAuth(e));
+        final data = await _api.post('/auth/google', body: {'id_token': idToken}, auth: false);
+        return _processarRespostaAuth(data);
       } catch (e, st) {
         debugPrint('loginComGoogle nativo: $e\n$st');
-        // Continua para OAuth web se o nativo falhar
+        return AuthResult(
+          status: AuthStatus.error,
+          message: e is ApiException ? e.message : 'Não foi possível concluir o login Google.',
+        );
       }
     }
 
-    return _loginComGoogleOAuth();
-  }
-
-  /// Fallback: navegador + deep link (requer redirect URLs no Supabase).
-  Future<AuthResult> _loginComGoogleOAuth() async {
-    try {
-      await supabase.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: OAuthConfig.redirectUrl,
-        authScreenLaunchMode: isWebApp
-            ? LaunchMode.platformDefault
-            : LaunchMode.externalApplication,
-      );
-      return AuthResult(
-        status: AuthStatus.oauthStarted,
-        message: isWebApp
-            ? 'Conclua o login no navegador e volte para o site.'
-            : 'Conclua o login no navegador. Ao terminar, toque em "Abrir no app" ou volte manualmente ao J FIGHT.',
-      );
-    } on AuthException catch (e) {
-      return AuthResult(status: AuthStatus.error, message: _mensagemAuth(e));
-    } catch (e) {
-      debugPrint('loginComGoogle OAuth: $e');
-      return const AuthResult(status: AuthStatus.error, message: 'Não foi possível abrir o login Google.');
-    }
+    return const AuthResult(
+      status: AuthStatus.error,
+      message: 'Login Google disponível apenas no app Android/iOS. Use e-mail e senha na web.',
+    );
   }
 
   Future<AuthResult> criarConta(String nome, String email, String senha) async {
     try {
-      final res = await supabase.auth.signUp(
-        email: email.trim(),
-        password: senha,
-        data: {'full_name': nome.trim()},
-      );
-      if (res.user == null) {
-        return const AuthResult(status: AuthStatus.error, message: 'Não foi possível criar a conta.');
-      }
-
-      if (res.session == null) {
-        return const AuthResult(
-          status: AuthStatus.needsEmailConfirmation,
-          message:
-              'Conta criada! Verifique seu e-mail e confirme o cadastro antes de entrar.',
-        );
-      }
-
-      final usuario = await ensurePerfilUsuario(res.user!, nome: nome.trim());
-      if (usuario == null) {
-        return const AuthResult(
-          status: AuthStatus.error,
-          message: 'Conta criada, mas o perfil não foi gerado. Tente entrar em alguns segundos.',
-        );
-      }
-      return AuthResult(status: AuthStatus.success, usuario: usuario);
-    } on AuthException catch (e) {
-      final msg = _mensagemAuth(e);
-      if (msg.toLowerCase().contains('already') || msg.toLowerCase().contains('registered')) {
-        return const AuthResult(status: AuthStatus.error, message: 'Este e-mail já está cadastrado.');
-      }
-      return AuthResult(status: AuthStatus.error, message: msg);
+      final data = await _api.post('/auth/register', body: {
+        'nome': nome.trim(),
+        'email': email.trim(),
+        'password': senha,
+      }, auth: false);
+      return _processarRespostaAuth(data);
+    } on ApiException catch (e) {
+      return AuthResult(status: AuthStatus.error, message: e.message);
     } catch (e) {
       debugPrint('criarConta: $e');
       return const AuthResult(status: AuthStatus.error, message: 'Erro ao criar conta. Tente novamente.');
@@ -149,103 +83,42 @@ class AuthService {
   }
 
   Future<Usuario?> recuperarSessao() async {
-    final user = supabase.auth.currentUser;
-    if (user == null) return null;
-    return ensurePerfilUsuario(user);
-  }
-
-  /// Garante linha em public.usuarios com role segura (sempre aluno, exceto allowlist).
-  Future<Usuario?> ensurePerfilUsuario(User user, {String? nome}) async {
-    final uid = user.id;
-    var perfil = await _buscarPerfil(uid);
-    if (perfil != null) {
-      return _corrigirRoleAdminIndevido(perfil);
-    }
-
-    for (var i = 0; i < 6; i++) {
-      await Future.delayed(Duration(milliseconds: 250 + i * 150));
-      perfil = await _buscarPerfil(uid);
-      if (perfil != null) return _corrigirRoleAdminIndevido(perfil);
-    }
-
-    final email = user.email?.trim() ?? '';
-    if (email.isEmpty) return null;
-
-    final role = roleForEmail(email);
-    final nomePerfil = nome ??
-        (user.userMetadata?['full_name'] as String?) ??
-        (user.userMetadata?['name'] as String?) ??
-        email.split('@').first;
-
+    await _api.loadToken();
+    if (_api.token == null) return null;
     try {
-      await supabase.from('usuarios').insert({
-        'id': uid,
-        'nome': nomePerfil,
-        'email': email,
-        'role': role,
-        if (user.userMetadata?['avatar_url'] != null)
-          'foto_url': user.userMetadata!['avatar_url'],
-      });
-    } on PostgrestException catch (e) {
-      debugPrint('ensurePerfil insert: ${e.message}');
+      final data = await _api.get('/auth/me');
+      final map = data['usuario'] as Map<String, dynamic>?;
+      if (map == null) return null;
+      return Usuario.fromMap(map);
     } catch (e) {
-      debugPrint('ensurePerfil insert: $e');
-    }
-
-    perfil = await _buscarPerfil(uid);
-    if (perfil != null) return _corrigirRoleAdminIndevido(perfil);
-    return null;
-  }
-
-  Future<Usuario?> _corrigirRoleAdminIndevido(Usuario u) async {
-    if (u.isAdmin && roleForEmail(u.email) != 'admin') {
-      debugPrint('Corrigindo role admin indevido para ${u.email}');
-      try {
-        await supabase.from('usuarios').update({'role': 'aluno'}).eq('id', u.id);
-        return _buscarPerfil(u.id);
-      } catch (e) {
-        debugPrint('Falha ao corrigir role: $e');
-      }
-    }
-    return u;
-  }
-
-  Future<Usuario?> _buscarPerfil(String uid) async {
-    try {
-      final data = await supabase.from('usuarios').select().eq('id', uid).maybeSingle();
-      if (data == null) return null;
-      return Usuario.fromMap({...data, 'id': uid});
-    } catch (e) {
-      debugPrint('_buscarPerfil: $e');
+      debugPrint('recuperarSessao: $e');
+      await _api.setToken(null);
       return null;
     }
   }
 
-  String _mensagemAuth(AuthException e) {
-    final msg = e.message.toLowerCase();
-    if (msg.contains('invalid login') || msg.contains('invalid credentials')) {
-      return 'Email ou senha incorretos.';
+  Future<AuthResult> _processarRespostaAuth(dynamic data) async {
+    final token = data['access_token'] as String?;
+    final usuarioMap = data['usuario'] as Map<String, dynamic>?;
+    if (token == null || usuarioMap == null) {
+      return const AuthResult(
+        status: AuthStatus.error,
+        message: 'Resposta inválida do servidor.',
+      );
     }
-    if (msg.contains('email not confirmed')) {
-      return 'Confirme seu e-mail antes de entrar.';
-    }
-    return e.message;
+    await _api.setToken(token);
+    return AuthResult(status: AuthStatus.success, usuario: Usuario.fromMap(usuarioMap));
   }
 
   Future<void> atualizarPerfil(String uid, {String? nome, String? email}) async {
-    final updates = <String, dynamic>{};
-    if (nome != null) updates['nome'] = nome;
-    if (email != null) updates['email'] = email;
-    if (updates.isNotEmpty) {
-      await supabase.from('usuarios').update(updates).eq('id', uid);
-    }
-    if (email != null) {
-      await supabase.auth.updateUser(UserAttributes(email: email));
-    }
+    await _api.patch('/auth/me', body: {
+      if (nome != null) 'nome': nome,
+      if (email != null) 'email': email,
+    });
   }
 
   Future<void> alterarSenha(String novaSenha) async {
-    await supabase.auth.updateUser(UserAttributes(password: novaSenha));
+    await _api.patch('/auth/me/password', body: {'password': novaSenha});
   }
 
   Future<AuthResult> recuperarSenha(String email) async {
@@ -254,16 +127,13 @@ class AuthService {
       return const AuthResult(status: AuthStatus.error, message: 'Informe um e-mail válido.');
     }
     try {
-      await supabase.auth.resetPasswordForEmail(
-        e,
-        redirectTo: isWebApp ? OAuthConfig.webRedirect : null,
-      );
-      return const AuthResult(
+      final data = await _api.post('/auth/forgot-password', body: {'email': e}, auth: false);
+      return AuthResult(
         status: AuthStatus.success,
-        message: 'Link enviado! Abra o e-mail para definir uma nova senha.',
+        message: data['message'] as String? ?? 'Instruções enviadas se o e-mail existir.',
       );
-    } on AuthException catch (ex) {
-      return AuthResult(status: AuthStatus.error, message: _mensagemAuth(ex));
+    } on ApiException catch (ex) {
+      return AuthResult(status: AuthStatus.error, message: ex.message);
     } catch (e) {
       debugPrint('recuperarSenha: $e');
       return const AuthResult(
@@ -274,12 +144,13 @@ class AuthService {
   }
 
   Future<void> vincularAluno(String userId, String alunoId) async {
-    await supabase.from('usuarios').update({'aluno_id': alunoId}).eq('id', userId);
+    await _api.patch('/auth/users/$userId/aluno', body: {'aluno_id': alunoId});
   }
 
   Future<void> logout() async {
-    await supabase.auth.signOut();
+    try {
+      await _api.post('/auth/logout');
+    } catch (_) {}
+    await _api.setToken(null);
   }
-
-  Stream<AuthState> get authStateChanges => supabase.auth.onAuthStateChange;
 }

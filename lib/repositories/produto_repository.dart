@@ -1,20 +1,18 @@
 ﻿import 'package:flutter/foundation.dart';
 
-import '../core/supabase_errors.dart';
-import '../core/supabase_service.dart';
+import '../core/api/api_client.dart';
+import '../core/api/api_errors.dart';
 import '../models/produto.dart';
 
 class ProdutoRepository {
+  final _api = ApiClient.instance;
+
   Future<List<Produto>> listar({bool? ativo}) async {
     try {
-      if (ativo != null) {
-        final data = await comTimeout(
-          supabase.from('produtos').select().eq('ativo', ativo).order('nome'),
-        );
-        return (data as List).map((m) => Produto.fromMap(m)).toList();
-      }
-      final data = await comTimeout(supabase.from('produtos').select().order('nome'));
-      return (data as List).map((m) => Produto.fromMap(m)).toList();
+      final data = await comTimeout(_api.get('/produtos', query: {
+        if (ativo != null) 'ativo': ativo.toString(),
+      }, auth: ativo == null));
+      return (data as List).map((m) => Produto.fromMap(Map<String, dynamic>.from(m))).toList();
     } catch (e, st) {
       debugPrint('ProdutoRepository.listar: $e\n$st');
       rethrow;
@@ -23,16 +21,16 @@ class ProdutoRepository {
 
   Future<Produto> criar(Produto p) async {
     final map = p.toMap()..remove('id');
-    final data = await supabase.from('produtos').insert(map).select().single();
-    return Produto.fromMap(data);
+    final data = await _api.post('/produtos', body: map);
+    return Produto.fromMap(Map<String, dynamic>.from(data as Map));
   }
 
   Future<void> atualizar(Produto p) async {
     final map = p.toMap()..remove('id');
-    await supabase.from('produtos').update(map).eq('id', p.id);
+    await _api.patch('/produtos/${p.id}', body: map);
   }
 
   Future<void> deletar(String id) async {
-    await supabase.from('produtos').delete().eq('id', id);
+    await _api.delete('/produtos/$id');
   }
 }

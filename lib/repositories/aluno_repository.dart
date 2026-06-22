@@ -1,85 +1,73 @@
-﻿import '../core/supabase_service.dart';
+﻿import '../core/api/api_client.dart';
 import '../models/aluno.dart';
-import 'turma_repository.dart';
 
 class AlunoRepository {
+  final _api = ApiClient.instance;
+
   Future<List<Aluno>> listar({bool? ativo}) async {
-    var query = supabase.from('alunos').select();
-    if (ativo != null) {
-      final data = await query.eq('ativo', ativo).order('nome');
-      return (data as List).map((m) => Aluno.fromMap(m)).toList();
-    }
-    final data = await query.order('nome');
-    return (data as List).map((m) => Aluno.fromMap(m)).toList();
+    final data = await _api.get('/alunos', query: {
+      if (ativo != null) 'ativo': ativo.toString(),
+    });
+    return (data as List).map((m) => Aluno.fromMap(Map<String, dynamic>.from(m))).toList();
   }
 
   Future<Aluno?> buscarPorEmail(String email) async {
     try {
-      final data = await supabase.from('alunos').select().eq('email', email).maybeSingle();
-      return data != null ? Aluno.fromMap(data) : null;
+      final data = await _api.get('/alunos/email/${Uri.encodeComponent(email)}');
+      return Aluno.fromMap(Map<String, dynamic>.from(data as Map));
     } catch (_) {
       return null;
     }
   }
 
   Future<Aluno?> buscarPorId(String id) async {
-    final data = await supabase.from('alunos').select().eq('id', id).maybeSingle();
-    return data != null ? Aluno.fromMap(data) : null;
+    try {
+      final data = await _api.get('/alunos/$id');
+      return Aluno.fromMap(Map<String, dynamic>.from(data as Map));
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<List<Aluno>> listarPorIds(List<String> ids) async {
     if (ids.isEmpty) return [];
-    final data = await supabase.from('alunos').select().inFilter('id', ids).order('nome');
-    return (data as List).map((m) => Aluno.fromMap(m)).toList();
+    final todos = await listar();
+    final set = ids.toSet();
+    return todos.where((a) => set.contains(a.id)).toList()..sort((a, b) => a.nome.compareTo(b.nome));
   }
 
-  /// Colegas validados das mesmas turmas (RLS permite leitura).
   Future<List<Aluno>> listarColegasDeTurmas(String alunoId) async {
-    final turmaRepo = TurmaRepository();
-    final minhasTurmas = await turmaRepo.turmasDoAluno(alunoId);
-    if (minhasTurmas.isEmpty) return [];
-    final ids = <String>{};
-    for (final t in minhasTurmas) {
-      final membros = await turmaRepo.alunoIdsPorTurma(t.id);
-      ids.addAll(membros);
-    }
-    ids.remove(alunoId);
-    if (ids.isEmpty) return [];
-    return listarPorIds(ids.toList());
+    final data = await _api.get('/alunos/colegas');
+    return (data as List).map((m) => Aluno.fromMap(Map<String, dynamic>.from(m))).toList();
   }
 
   Future<Aluno> criar(Aluno aluno) async {
     final map = aluno.toMap()..remove('id');
-    final data = await supabase.from('alunos').insert(map).select().single();
-    return Aluno.fromMap(data);
+    final data = await _api.post('/alunos', body: map);
+    return Aluno.fromMap(Map<String, dynamic>.from(data as Map));
   }
 
   Future<void> atualizar(Aluno aluno) async {
     final map = aluno.toMap()..remove('id');
     map['updated_at'] = DateTime.now().toIso8601String();
-    await supabase.from('alunos').update(map).eq('id', aluno.id);
+    await _api.patch('/alunos/${aluno.id}', body: map);
   }
 
   Future<void> deletar(String id) async {
-    await supabase.from('alunos').delete().eq('id', id);
+    await _api.delete('/alunos/$id');
   }
 
   Future<void> validar(String id) async {
-    await supabase.from('alunos').update({
-      'cadastro_validado': true, 'ativo': true,
-      'updated_at': DateTime.now().toIso8601String(),
-    }).eq('id', id);
+    await _api.post('/alunos/$id/validar');
   }
 
   Future<List<Aluno>> pendentesValidacao() async {
-    final data = await supabase.from('alunos').select()
-        .eq('cadastro_validado', false).order('created_at', ascending: false);
-    return (data as List).map((m) => Aluno.fromMap(m)).toList();
+    final data = await _api.get('/alunos/pendentes');
+    return (data as List).map((m) => Aluno.fromMap(Map<String, dynamic>.from(m))).toList();
   }
 
   Future<void> validarComTurmas(String alunoId, List<String> turmaIds) async {
     if (turmaIds.isEmpty) throw ArgumentError('Selecione pelo menos uma turma.');
-    await validar(alunoId);
-    await TurmaRepository().substituirTurmasAluno(alunoId, turmaIds);
+    await _api.post('/alunos/$alunoId/validar-turmas', body: {'turma_ids': turmaIds});
   }
 }

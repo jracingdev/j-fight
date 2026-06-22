@@ -1,9 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'supabase_service.dart';
+import 'api/api_client.dart';
 
 Future<String?> uploadFotoBucket({
   required String pasta,
@@ -25,28 +24,11 @@ Future<String?> uploadFotoBucket({
   }
 
   final ext = extension == 'jpeg' ? 'jpg' : extension;
-  final storagePath = '$pasta/${DateTime.now().millisecondsSinceEpoch}.$ext';
 
   try {
-    await supabase.storage.from('fotos').uploadBinary(
-      storagePath,
-      bytes,
-      fileOptions: FileOptions(upsert: true, contentType: _mime(ext)),
-    );
-    return supabase.storage.from('fotos').getPublicUrl(storagePath);
+    return ApiClient.instance.uploadFoto(pasta: pasta, bytes: bytes, extension: ext);
   } catch (e) {
     debugPrint('uploadFotoBucket web: $e');
     return null;
-  }
-}
-
-String _mime(String ext) {
-  switch (ext) {
-    case 'png':
-      return 'image/png';
-    case 'webp':
-      return 'image/webp';
-    default:
-      return 'image/jpeg';
   }
 }

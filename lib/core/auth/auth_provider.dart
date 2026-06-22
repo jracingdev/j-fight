@@ -1,6 +1,4 @@
-﻿import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+﻿import 'package:flutter/material.dart';
 import '../../models/aluno.dart';
 import '../../models/usuario.dart';
 import '../../repositories/aluno_repository.dart';
@@ -24,7 +22,6 @@ class AuthProvider extends ChangeNotifier {
   bool get autenticado => _usuario != null;
   bool get isAdmin => _usuario?.isAdmin ?? false;
 
-  /// Primeiro acesso ou cadastro incompleto: exibe formulário obrigatório.
   bool get precisaCompletarCadastro {
     if (isAdmin || _usuario == null) return false;
     final aluno = _alunoVinculado;
@@ -50,29 +47,6 @@ class AuthProvider extends ChangeNotifier {
     if (_usuario != null && !isAdmin) {
       await _atualizarVinculoAluno();
     }
-
-    AuthService.instance.authStateChanges.listen((data) async {
-      final event = data.event;
-      if (event == AuthChangeEvent.signedIn ||
-          event == AuthChangeEvent.tokenRefreshed ||
-          event == AuthChangeEvent.userUpdated) {
-        final user = data.session?.user ?? Supabase.instance.client.auth.currentUser;
-        if (user != null) {
-          _usuario = await AuthService.instance.ensurePerfilUsuario(user);
-          if (_usuario != null && !isAdmin) {
-            await _atualizarVinculoAluno();
-          } else {
-            _alunoVinculado = null;
-            notifyListeners();
-          }
-        }
-      } else if (event == AuthChangeEvent.signedOut) {
-        _usuario = null;
-        _alunoVinculado = null;
-        _carregandoAluno = false;
-        notifyListeners();
-      }
-    });
   }
 
   Future<void> _carregarAlunoVinculado() async {
@@ -145,7 +119,6 @@ class AuthProvider extends ChangeNotifier {
     return result;
   }
 
-  /// Valida a senha atual, confirma biometria e grava credenciais para login rápido.
   Future<AuthResult> configurarBiometria(String senha) async {
     final email = _usuario?.email.trim();
     if (email == null || email.isEmpty) {

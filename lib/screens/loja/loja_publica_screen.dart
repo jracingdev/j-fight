@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants.dart';
-import '../../core/supabase_errors.dart';
+import '../../core/api/api_errors.dart';
 import '../../core/theme.dart';
 import '../../models/pedido.dart';
 import '../../models/produto.dart';

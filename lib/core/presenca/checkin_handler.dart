@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/auth/auth_provider.dart';
-import '../../core/supabase_errors.dart';
+import '../../core/api/api_errors.dart';
 import '../../core/theme.dart';
 import '../../repositories/presenca_checkin_repository.dart';
 import '../../utils/date_utils.dart';

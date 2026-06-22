@@ -1,15 +1,16 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'supabase_service.dart';
+import 'api/api_client.dart';
+import 'api/api_config.dart';
 
 class MercadoPagoService {
   static final MercadoPagoService instance = MercadoPagoService._();
   MercadoPagoService._();
 
-  static const _baseUrl = 'https://api.mercadopago.com';
+  static final _baseUrl = 'https://api.mercadopago.com';
   static const _prefKey = 'mp_access_token';
-  static const _webhookUrl = '$supabaseUrl/functions/v1/mp-webhook';
+  static String get _webhookUrl => '$apiPublicUrl/api/v1/webhooks/mercadopago';
 
   Future<String?> getAccessToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -19,9 +20,8 @@ class MercadoPagoService {
   Future<void> saveAccessToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefKey, token);
-    // Persiste no Supabase para a Edge Function (webhook) usar
     try {
-      await supabase.from('financeiro_config').update({'mp_access_token': token}).eq('id', 1);
+      await ApiClient.instance.patch('/financeiro/config/mp-token', body: {'mp_access_token': token});
     } catch (_) {}
   }
 
@@ -29,7 +29,7 @@ class MercadoPagoService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_prefKey);
     try {
-      await supabase.from('financeiro_config').update({'mp_access_token': null}).eq('id', 1);
+      await ApiClient.instance.patch('/financeiro/config/mp-token', body: {'mp_access_token': null});
     } catch (_) {}
   }
 
@@ -85,50 +85,32 @@ class MercadoPagoService {
         body: jsonEncode(body),
       ).timeout(const Duration(seconds: 15));
 
-      if (res.statusCode == 201) {
-        final data = jsonDecode(res.body);
-        return MpPreferencia(
-          id: data['id'],
-          link: data['init_point'],
-          linkSandbox: data['sandbox_init_point'],
-        );
-      }
-      return null;
+      if (res.statusCode != 200 && res.statusCode != 201) return null;
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      return MpPreferencia(
+        id: data['id'] as String,
+        link: (data['init_point'] ?? data['sandbox_init_point'] ?? '') as String,
+      );
     } catch (_) {
       return null;
     }
   }
 
-  /// Consulta pagamentos de uma preferência e retorna o status do mais recente.
-  /// Retorna 'approved', 'pending', 'rejected', etc. ou null se não encontrado.
   Future<String?> consultarStatus(String preferenciaId) async {
     final token = await getAccessToken();
     if (token == null) return null;
 
     try {
-      final uri = Uri.parse('$_baseUrl/v1/payments/search').replace(queryParameters: {
-        'preference_id': preferenciaId,
-        'sort': 'date_created',
-        'criteria': 'desc',
-        'limit': '5',
-      });
       final res = await http.get(
-        uri,
+        Uri.parse('$_baseUrl/checkout/preferences/$preferenciaId'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(const Duration(seconds: 10));
 
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        final results = data['results'] as List?;
-        if (results == null || results.isEmpty) return null;
-        // Prioriza 'approved' — pode haver tentativas rejeitadas antes
-        final aprovado = results.firstWhere(
-          (r) => r['status'] == 'approved',
-          orElse: () => results.first,
-        );
-        return aprovado['status'] as String?;
-      }
-      return null;
+      if (res.statusCode != 200) return null;
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      final payments = data['payments'] as List?;
+      if (payments == null || payments.isEmpty) return null;
+      return payments.last['status'] as String?;
     } catch (_) {
       return null;
     }
@@ -138,7 +120,5 @@ class MercadoPagoService {
 class MpPreferencia {
   final String id;
   final String link;
-  final String linkSandbox;
-
-  MpPreferencia({required this.id, required this.link, required this.linkSandbox});
+  MpPreferencia({required this.id, required this.link});
 }

@@ -12,8 +12,8 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
-  # Backend Supabase (substitui SQLite)
-  supabase_flutter: ^2.8.4
+  # Backend próprio (PostgreSQL + API REST)
+  # supabase_flutter removido — ver pasta api/
 
   # HTTP (ViaCEP + Mercado Pago)
   http: ^1.2.1

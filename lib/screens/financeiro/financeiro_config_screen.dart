@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import '../../core/supabase_errors.dart';
+import '../../core/api/api_errors.dart';
 import '../../core/theme.dart';
 import '../../models/financeiro_config.dart';
 import '../../models/regra_financeira.dart';

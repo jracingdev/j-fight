@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme.dart';
 import '../../core/mp_service.dart';
-import '../../core/supabase_service.dart';
+import '../../core/api/api_config.dart';
 
 class MpConfigScreen extends StatefulWidget {
   const MpConfigScreen({super.key});
@@ -216,7 +216,7 @@ class _MpConfigScreenState extends State<MpConfigScreen> {
                     child: Row(children: [
                       Expanded(
                         child: Text(
-                          '$supabaseUrl/functions/v1/mp-webhook',
+                          '$apiPublicUrl/api/v1/webhooks/mercadopago',
                           style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
                         ),
                       ),
@@ -227,7 +227,7 @@ class _MpConfigScreenState extends State<MpConfigScreen> {
                         tooltip: 'Copiar URL',
                         onPressed: () {
                           Clipboard.setData(const ClipboardData(
-                            text: '$supabaseUrl/functions/v1/mp-webhook',
+                            text: '$apiPublicUrl/api/v1/webhooks/mercadopago',
                           ));
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(

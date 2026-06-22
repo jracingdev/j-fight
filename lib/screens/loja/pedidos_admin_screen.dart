@@ -4,7 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/mp_service.dart';
 import '../../core/theme.dart';
 import '../../models/pedido.dart';
-import '../../core/supabase_errors.dart';
+import '../../core/api/api_errors.dart';
 import '../../repositories/pedido_repository.dart';
 import '../../widgets/pedidos_erro_view.dart';
 import '../../utils/date_utils.dart';

@@ -3,24 +3,15 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart';
-import '../supabase_service.dart';
+import '../api/api_client.dart';
 
 class DriveBackup {
   static const _fileName = 'j_fight_backup.json';
+  final _api = ApiClient.instance;
 
   Future<bool> exportar() async {
     try {
-      // Exporta todas as tabelas do Supabase
-      final tables = ['alunos', 'mensalidades', 'produtos', 'produto_variantes', 'avisos', 'eventos', 'turmas', 'aluno_turmas'];
-      final Map<String, dynamic> data = {
-        'app': 'j_fight',
-        'version': 3,
-        'exported_at': DateTime.now().toIso8601String(),
-      };
-      for (final table in tables) {
-        data[table] = await supabase.from(table).select();
-      }
-
+      final data = await _api.get('/backup/export');
       final json = const JsonEncoder.withIndent('  ').convert(data);
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/$_fileName');
@@ -52,14 +43,7 @@ class DriveBackup {
       final data = jsonDecode(content) as Map<String, dynamic>;
       if (data['app'] != 'j_fight') return BackupRestoreResult.arquivoInvalido;
 
-      // Restaura no Supabase
-      final tables = ['avisos', 'eventos', 'produto_variantes', 'produtos', 'mensalidades', 'alunos'];
-      for (final table in tables) {
-        final rows = data[table] as List<dynamic>? ?? [];
-        if (rows.isEmpty) continue;
-        await supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000');
-        await supabase.from(table).insert(rows.map((r) => Map<String, dynamic>.from(r)).toList());
-      }
+      await _api.post('/backup/import', body: data);
       return BackupRestoreResult.sucesso;
     } catch (_) {
       return BackupRestoreResult.erro;

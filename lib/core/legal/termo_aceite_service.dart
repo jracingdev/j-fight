@@ -2,9 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Registra aceite de termos (nome, data/hora, IP) no Supabase.
+import '../api/api_client.dart';
+
+/// Registra aceite de termos no servidor.
 class TermoAceiteService {
   TermoAceiteService._();
   static final instance = TermoAceiteService._();
@@ -14,6 +15,8 @@ class TermoAceiteService {
     aptidaoFisica: 'aptidao_fisica',
     privacidade: 'privacidade',
   );
+
+  final _api = ApiClient.instance;
 
   Future<void> registrarAceitesCadastro({
     required String nome,
@@ -64,7 +67,7 @@ class TermoAceiteService {
     required String userAgent,
   }) async {
     try {
-      await Supabase.instance.client.from('termos_aceites').insert({
+      await _api.post('/termos-aceites', body: {
         'user_id': userId,
         'nome': nome,
         'email': email,

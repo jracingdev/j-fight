@@ -19,7 +19,7 @@ import '../../core/theme.dart';
 import '../../models/pedido.dart';
 import '../../models/produto.dart';
 import '../../core/storage_service.dart';
-import '../../core/supabase_errors.dart';
+import '../../core/api/api_errors.dart';
 import '../../repositories/pedido_repository.dart';
 import '../../repositories/produto_repository.dart';
 import '../../repositories/variante_repository.dart';
@@ -98,7 +98,7 @@ class _LojaScreenState extends State<LojaScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                '$fotosQuebradas produto(s) com foto antiga. Edite e salve de novo para enviar ao Supabase.',
+                '$fotosQuebradas produto(s) com foto antiga. Edite e salve de novo para enviar ao servidor.',
               ),
               duration: const Duration(seconds: 5),
               backgroundColor: Colors.orange.shade800,

@@ -1,18 +1,15 @@
-import '../core/supabase_service.dart';
+import '../core/api/api_client.dart';
 import '../models/presenca_config.dart';
 
 class PresencaConfigRepository {
+  final _api = ApiClient.instance;
+
   Future<PresencaConfig> obter() async {
-    try {
-      final data = await supabase.from('presenca_config').select().eq('id', 1).maybeSingle();
-      if (data == null) return const PresencaConfig();
-      return PresencaConfig.fromMap(data);
-    } catch (_) {
-      return const PresencaConfig();
-    }
+    final data = await _api.get('/presencas/config');
+    return PresencaConfig.fromMap(Map<String, dynamic>.from(data as Map));
   }
 
   Future<void> salvar(PresencaConfig config) async {
-    await supabase.from('presenca_config').upsert({'id': 1, ...config.toMap()});
+    await _api.put('/presencas/config', body: config.toMap());
   }
 }

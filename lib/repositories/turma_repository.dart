@@ -1,128 +1,69 @@
-import '../core/supabase_errors.dart';
-import '../core/supabase_service.dart';
+import '../core/api/api_client.dart';
+import '../core/api/api_errors.dart';
 import '../models/turma.dart';
 
 class TurmaRepository {
+  final _api = ApiClient.instance;
+
   Future<List<Turma>> listar({bool apenasAtivas = true}) async {
-    var query = supabase.from('turmas').select();
-    if (apenasAtivas) query = query.eq('ativa', true);
-    final data = await query.order('horario').order('nome');
-    return (data as List).map((m) => Turma.fromMap(m)).toList();
+    final data = await _api.get('/turmas', query: {'apenas_ativas': apenasAtivas.toString()});
+    return (data as List).map((m) => Turma.fromMap(Map<String, dynamic>.from(m))).toList();
   }
 
   Future<Turma?> buscarPorId(String id) async {
-    final data = await supabase.from('turmas').select().eq('id', id).maybeSingle();
-    return data != null ? Turma.fromMap(data) : null;
+    try {
+      final data = await _api.get('/turmas/$id');
+      return Turma.fromMap(Map<String, dynamic>.from(data as Map));
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> atualizar(Turma turma) async {
-    await supabase.from('turmas').update({
+    await _api.patch('/turmas/${turma.id}', body: {
       'nome': turma.nome,
       'horario': turma.horario,
       'dias_semana': turma.diasSemana,
       'tipo': turma.tipo,
-      // Não altera ativa ao editar dias — evita desativar turma por engano
-    }).eq('id', turma.id);
+    });
   }
 
   Future<List<Turma>> turmasDoAluno(String alunoId) async {
-    final data = await supabase
-        .from('aluno_turmas')
-        .select('turma_id, turmas(*)')
-        .eq('aluno_id', alunoId);
-    final turmas = <Turma>[];
-    for (final row in data as List) {
-      final t = row['turmas'];
-      if (t != null) turmas.add(Turma.fromMap(t as Map<String, dynamic>));
-    }
-    turmas.sort((a, b) => a.horario.compareTo(b.horario));
-    return turmas;
+    final data = await _api.get('/turmas/aluno/$alunoId');
+    return (data as List).map((m) => Turma.fromMap(Map<String, dynamic>.from(m))).toList();
   }
 
   Future<List<String>> alunoIdsPorTurma(String turmaId) async {
-    final data = await supabase.from('aluno_turmas').select('aluno_id').eq('turma_id', turmaId);
-    return (data as List).map((r) => r['aluno_id'] as String).toList();
+    final data = await _api.get('/turmas/$turmaId/alunos');
+    return (data as List).map((id) => id as String).toList();
   }
 
-  /// Uma única consulta — evita N+1 ao listar alunos.
   Future<Map<String, List<Turma>>> turmasPorTodosAlunos() async {
-    final data = await comTimeout(
-      supabase.from('aluno_turmas').select('aluno_id, turmas(*)'),
-    );
+    final data = await comTimeout(_api.get('/turmas/mapa/alunos'));
     final map = <String, List<Turma>>{};
-    for (final row in data as List) {
-      final alunoId = row['aluno_id'] as String;
-      final t = row['turmas'];
-      if (t == null) continue;
-      map.putIfAbsent(alunoId, () => []).add(Turma.fromMap(t as Map<String, dynamic>));
-    }
-    for (final lista in map.values) {
-      lista.sort((a, b) => a.horario.compareTo(b.horario));
-    }
+    (data as Map<String, dynamic>).forEach((alunoId, turmas) {
+      map[alunoId] = (turmas as List)
+          .map((t) => Turma.fromMap(Map<String, dynamic>.from(t as Map)))
+          .toList();
+    });
     return map;
   }
 
-  /// Mapa turma_id → lista de aluno_id em uma consulta (painel financeiro).
   Future<Map<String, List<String>>> alunoIdsPorTodasTurmas() async {
-    final data = await comTimeout(
-      supabase.from('aluno_turmas').select('aluno_id, turma_id'),
-    );
+    final data = await comTimeout(_api.get('/turmas/mapa/turma-alunos'));
     final map = <String, List<String>>{};
-    for (final row in data as List) {
-      final tid = row['turma_id'] as String;
-      final aid = row['aluno_id'] as String;
-      map.putIfAbsent(tid, () => []).add(aid);
-    }
+    (data as Map<String, dynamic>).forEach((tid, ids) {
+      map[tid] = (ids as List).map((id) => id as String).toList();
+    });
     return map;
   }
 
   Future<void> substituirTurmasAluno(String alunoId, List<String> turmaIds) async {
-    final atuais = await supabase
-        .from('aluno_turmas')
-        .select('turma_id, data_inicio')
-        .eq('aluno_id', alunoId);
-    final datasExistentes = <String, String>{};
-    final idsAtuais = <String>{};
-    for (final row in atuais as List) {
-      final tid = row['turma_id'] as String;
-      final d = row['data_inicio'] as String?;
-      idsAtuais.add(tid);
-      if (d != null && d.isNotEmpty) datasExistentes[tid] = d;
-    }
-
-    final hoje = DateTime.now().toIso8601String().substring(0, 10);
-    final novos = turmaIds.where((tid) => !idsAtuais.contains(tid)).toList();
-    final removidos = idsAtuais.where((tid) => !turmaIds.contains(tid)).toList();
-
-    // Inserir novos antes de remover os antigos — evita deixar aluno sem turma se o delete falhar
-    if (novos.isNotEmpty) {
-      await supabase.from('aluno_turmas').insert(
-        novos.map((tid) => {
-          'aluno_id': alunoId,
-          'turma_id': tid,
-          'data_inicio': hoje,
-        }).toList(),
-      );
-    }
-    if (removidos.isNotEmpty) {
-      await supabase
-          .from('aluno_turmas')
-          .delete()
-          .eq('aluno_id', alunoId)
-          .inFilter('turma_id', removidos);
-    }
+    await _api.put('/turmas/aluno/$alunoId', body: {'turma_ids': turmaIds});
   }
 
-  /// Contagem de alunos por turma (uma consulta).
   Future<Map<String, int>> contagemAlunosPorTurma() async {
-    final data = await comTimeout(
-      supabase.from('aluno_turmas').select('turma_id'),
-    );
-    final map = <String, int>{};
-    for (final row in data as List) {
-      final tid = row['turma_id'] as String;
-      map[tid] = (map[tid] ?? 0) + 1;
-    }
-    return map;
+    final data = await comTimeout(_api.get('/turmas/contagem'));
+    return (data as Map<String, dynamic>).map((k, v) => MapEntry(k, v as int));
   }
 }
