@@ -15,9 +15,10 @@ class AlunoRepository {
     try {
       final data = await _api.get('/alunos/email/${Uri.encodeComponent(email)}');
       if (data == null) return null;
-      return Aluno.fromMap(Map<String, dynamic>.from(data as Map));
+      if (data is! Map) return null;
+      return Aluno.fromMap(Map<String, dynamic>.from(data));
     } on ApiException catch (e) {
-      if (e.statusCode == 404) return null;
+      if (e.statusCode == 404 || e.statusCode == 204) return null;
       return null;
     } catch (_) {
       return null;

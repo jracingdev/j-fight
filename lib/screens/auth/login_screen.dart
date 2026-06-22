@@ -116,11 +116,15 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!result.ok) {
         setState(() => _erro = result.message ?? 'Email ou senha incorretos.');
       } else {
-        await CredentialRememberService.instance.salvar(
-          lembrar: _lembrarSenha,
-          email: email,
-          senha: senha,
-        );
+        try {
+          await CredentialRememberService.instance.salvar(
+            lembrar: _lembrarSenha,
+            email: email,
+            senha: senha,
+          );
+        } catch (e, st) {
+          debugPrint('login: falha ao lembrar credenciais: $e\n$st');
+        }
         if (isNativeApp) {
           BiometricOfferHelper.agendar(email: email, senha: senha);
         }

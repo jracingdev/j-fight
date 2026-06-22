@@ -68,23 +68,28 @@ class _PerfilScreenState extends State<PerfilScreen> {
     final auth = context.read<AuthProvider>();
     final user = auth.usuario;
     if (user == null) return;
-    final aluno = auth.isAdmin
-        ? null
-        : auth.alunoVinculado ??
-            (user.email.isNotEmpty ? await _alunoRepo.buscarPorEmail(user.email) : null);
-    List<Mensalidade> mens = [];
-    List<Turma> turmas = [];
-    if (aluno != null) {
-      mens = await _mensRepo.porAluno(aluno.id);
-      turmas = await TurmaRepository().turmasDoAluno(aluno.id);
-    }
-    if (mounted) {
-      setState(() {
-        _aluno = aluno;
-        _mensalidades = mens.take(6).toList();
-        _turmas = turmas;
-        _loading = false;
-      });
+    try {
+      final aluno = auth.isAdmin
+          ? null
+          : auth.alunoVinculado ??
+              (user.email.isNotEmpty ? await _alunoRepo.buscarPorEmail(user.email) : null);
+      List<Mensalidade> mens = [];
+      List<Turma> turmas = [];
+      if (aluno != null) {
+        mens = await _mensRepo.porAluno(aluno.id);
+        turmas = await TurmaRepository().turmasDoAluno(aluno.id);
+      }
+      if (mounted) {
+        setState(() {
+          _aluno = aluno;
+          _mensalidades = mens.take(6).toList();
+          _turmas = turmas;
+          _loading = false;
+        });
+      }
+    } catch (e, st) {
+      debugPrint('PerfilScreen._load: $e\n$st');
+      if (mounted) setState(() => _loading = false);
     }
   }
 
