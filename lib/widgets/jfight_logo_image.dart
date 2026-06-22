@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../core/theme.dart';
 
-/// Logo J FIGHT — asset em assets/images/logo.png
+/// Logo J FIGHT (versão dark) — assets/images/logo.png
 class JFightLogoImage extends StatelessWidget {
   final double height;
   final double? width;
@@ -15,7 +14,7 @@ class JFightLogoImage extends StatelessWidget {
     this.width,
     this.borderRadius = 16,
     this.fit = BoxFit.contain,
-    this.backgroundColor = corFundoEscuro,
+    this.backgroundColor = Colors.black,
   });
 
   static const assetPath = 'assets/images/logo.png';

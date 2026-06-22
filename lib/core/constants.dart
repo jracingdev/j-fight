@@ -1,25 +1,25 @@
-// ============================================================
-// J FIGHT — Constantes do App (projeto demonstração)
+﻿// ============================================================
+// J FIGHT â€” Constantes do App (projeto demonstraÃ§Ã£o)
 // ============================================================
 
-const String appVersion = '1.0.0';
-const String appBuild = '1';
+const String appVersion = '1.1.0';
+const String appBuild = '2';
 const String appName = 'J FIGHT';
 
-/// Repositório GitHub do projeto.
+/// RepositÃ³rio GitHub do projeto.
 const String githubRepoUrl = 'https://github.com/jracingdev/j-fight.git';
 
-/// Site / loja pública (GitHub Pages).
+/// Site / loja pÃºblica (GitHub Pages).
 const String webAppUrl = 'https://jracingdev.github.io/j-fight/';
 /// Link da loja (mesma URL da home na web).
 const String lojaPublicaWebUrl = webAppUrl;
 const String privacyPolicyUrl = 'https://jracingdev.github.io/j-fight/politica-privacidade.html';
 const String termsOfUseUrl = 'https://jracingdev.github.io/j-fight/termos-de-uso.html';
 
-// Academia (dados fictícios para demonstração)
+// Academia (dados fictÃ­cios para demonstraÃ§Ã£o)
 const String academiaFundacao = '2024';
 const String academiaCredenciada = 'ACADEMIA DE ARTES MARCIAIS';
-const String academiaCredencial = 'DEMONSTRAÇÃO';
+const String academiaCredencial = 'DEMONSTRAÃ‡ÃƒO';
 const String professorNome = 'INSTRUTOR DEMO';
 const String professorGraduacao = 'FAIXA PRETA';
 const String professorRegistro = 'DEMO-0001';
@@ -28,11 +28,11 @@ const String professorTelefoneExibicao = '(21) 00000-0000';
 const String professorInstagram = 'jfight.academy';
 const String studioInstagram = 'jfight.studio';
 
-// Pagamento (dados fictícios)
+// Pagamento (dados fictÃ­cios)
 const String pixKey = 'demo@jfight.app';
 const String pixNome = 'J FIGHT Academia';
 
-/// Google Sign-In nativo (Android/iOS). Mesmo Client ID do Supabase → Auth → Google.
+/// Google Sign-In nativo (Android/iOS). Mesmo Client ID do Supabase â†’ Auth â†’ Google.
 /// Build: --dart-define=GOOGLE_WEB_CLIENT_ID=xxxx.apps.googleusercontent.com
 const String googleWebClientIdEnv = String.fromEnvironment(
   'GOOGLE_WEB_CLIENT_ID',

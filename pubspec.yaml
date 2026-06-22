@@ -1,7 +1,7 @@
-name: j_fight
-description: J FIGHT - Gestão de Academia de Artes Marciais (demonstração)
+﻿name: j_fight
+description: J FIGHT - GestÃ£o de Academia de Artes Marciais (demonstraÃ§Ã£o)
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -52,13 +52,13 @@ flutter_launcher_icons:
   android: true
   ios: false
   image_path: assets/images/logo.png
-  adaptive_icon_background: "#1A1A2E"
+  adaptive_icon_background: "#000000"
   adaptive_icon_foreground: assets/images/logo.png
   adaptive_icon_foreground_inset: 0
   web:
     generate: true
     image_path: assets/images/logo.png
-    background_color: "#1A1A2E"
+    background_color: "#000000"
     theme_color: "#B91C1C"
 
 flutter:
