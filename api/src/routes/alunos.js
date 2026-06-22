@@ -60,11 +60,13 @@ router.get('/colegas', async (req, res) => {
 
 router.get('/email/:email', async (req, res) => {
   const email = decodeURIComponent(req.params.email);
+  const admin = isAdminUser(req.user);
   const r = await query('SELECT * FROM alunos WHERE lower(email) = lower($1) LIMIT 1', [email]);
   const row = r.rows[0];
-  if (!row) return res.status(404).json({ error: 'Não encontrado.' });
-
-  const admin = isAdminUser(req.user);
+  if (!row) {
+    if (admin) return res.status(204).end();
+    return res.status(404).json({ error: 'Não encontrado.' });
+  }
   const meuId = await meuAlunoId(req.userEmail);
   if (!admin && row.id !== meuId && !(await idsColegasTurma(meuId || '')).includes(row.id)) {
     return res.status(403).json({ error: 'Sem permissão.' });

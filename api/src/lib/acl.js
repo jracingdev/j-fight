@@ -13,7 +13,7 @@ export async function getUsuario(userId) {
 }
 
 export function isAdminUser(u) {
-  return u?.role === 'admin';
+  return u?.role === 'admin' || roleForEmail(u?.email) === 'admin';
 }
 
 export async function meuAlunoId(email) {

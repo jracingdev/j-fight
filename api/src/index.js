@@ -22,7 +22,30 @@ import { roleForEmail } from './lib/acl.js';
 
 const app = express();
 
-app.use(cors());
+const corsOrigins = (process.env.CORS_ORIGINS || 'https://jracingdev.github.io,http://localhost:*,http://127.0.0.1:*')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || corsOrigins.includes('*')) return callback(null, true);
+      const allowed = corsOrigins.some((entry) => {
+        if (entry.includes('*')) {
+          const prefix = entry.replace(/\*+$/, '');
+          return origin.startsWith(prefix);
+        }
+        return origin === entry;
+      });
+      callback(null, allowed);
+    },
+    credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }),
+);
+app.options('*', cors());
 app.use(express.json({ limit: '10mb' }));
 
 const uploadsPath = path.resolve(config.uploadDir);

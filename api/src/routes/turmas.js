@@ -21,6 +21,57 @@ router.get('/contagem', async (req, res) => {
   res.json(map);
 });
 
+// Rotas estáticas antes de /:id — evita capturar "mapa" como id.
+router.get('/mapa/alunos', requireAdmin, async (_req, res) => {
+  try {
+    const r = await query(
+      `SELECT at.aluno_id, t.id, t.nome, t.horario, t.dias_semana, t.tipo, t.ativa
+       FROM aluno_turmas at
+       INNER JOIN turmas t ON t.id = at.turma_id
+       ORDER BY at.aluno_id, t.horario, t.nome`,
+    );
+    const map = {};
+    for (const row of r.rows) {
+      const { aluno_id, ...turma } = row;
+      if (!map[aluno_id]) map[aluno_id] = [];
+      map[aluno_id].push(turma);
+    }
+    res.json(map);
+  } catch (e) {
+    console.error('GET /turmas/mapa/alunos', e);
+    res.status(500).json({ error: 'Erro ao carregar turmas dos alunos.' });
+  }
+});
+
+router.get('/mapa/turma-alunos', requireAdmin, async (_req, res) => {
+  try {
+    const r = await query('SELECT aluno_id, turma_id FROM aluno_turmas');
+    const map = {};
+    for (const row of r.rows) {
+      if (!map[row.turma_id]) map[row.turma_id] = [];
+      map[row.turma_id].push(row.aluno_id);
+    }
+    res.json(map);
+  } catch (e) {
+    console.error('GET /turmas/mapa/turma-alunos', e);
+    res.status(500).json({ error: 'Erro ao carregar alunos por turma.' });
+  }
+});
+
+router.get('/aluno/:alunoId', async (req, res) => {
+  const r = await query(
+    `SELECT t.* FROM aluno_turmas at JOIN turmas t ON t.id = at.turma_id
+     WHERE at.aluno_id = $1 ORDER BY t.horario, t.nome`,
+    [req.params.alunoId],
+  );
+  res.json(r.rows);
+});
+
+router.get('/:id/alunos', async (req, res) => {
+  const r = await query('SELECT aluno_id FROM aluno_turmas WHERE turma_id = $1', [req.params.id]);
+  res.json(r.rows.map((x) => x.aluno_id));
+});
+
 router.get('/:id', async (req, res) => {
   const r = await query('SELECT * FROM turmas WHERE id = $1', [req.params.id]);
   if (!r.rows[0]) return res.status(404).json({ error: 'Não encontrado.' });
@@ -35,43 +86,6 @@ router.patch('/:id', requireAdmin, async (req, res) => {
     [nome, horario, dias_semana, tipo, req.params.id],
   );
   res.json(r.rows[0]);
-});
-
-router.get('/:id/alunos', async (req, res) => {
-  const r = await query('SELECT aluno_id FROM aluno_turmas WHERE turma_id = $1', [req.params.id]);
-  res.json(r.rows.map((x) => x.aluno_id));
-});
-
-router.get('/aluno/:alunoId', async (req, res) => {
-  const r = await query(
-    `SELECT t.* FROM aluno_turmas at JOIN turmas t ON t.id = at.turma_id
-     WHERE at.aluno_id = $1 ORDER BY t.horario, t.nome`,
-    [req.params.alunoId],
-  );
-  res.json(r.rows);
-});
-
-router.get('/mapa/alunos', requireAdmin, async (_req, res) => {
-  const r = await query(
-    `SELECT at.aluno_id, t.* FROM aluno_turmas at JOIN turmas t ON t.id = at.turma_id`,
-  );
-  const map = {};
-  for (const row of r.rows) {
-    const { aluno_id, ...turma } = row;
-    if (!map[aluno_id]) map[aluno_id] = [];
-    map[aluno_id].push(turma);
-  }
-  res.json(map);
-});
-
-router.get('/mapa/turma-alunos', requireAdmin, async (_req, res) => {
-  const r = await query('SELECT aluno_id, turma_id FROM aluno_turmas');
-  const map = {};
-  for (const row of r.rows) {
-    if (!map[row.turma_id]) map[row.turma_id] = [];
-    map[row.turma_id].push(row.aluno_id);
-  }
-  res.json(map);
 });
 
 router.put('/aluno/:alunoId', requireAdmin, async (req, res) => {
