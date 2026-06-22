@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import 'api_config.dart';
@@ -26,6 +27,13 @@ class ApiClient {
     _token = await TokenStorage.read();
   }
 
+  /// Garante token em memória antes de chamadas autenticadas (Android pode perder cache).
+  Future<void> ensureToken() async {
+    if (_token == null || _token!.isEmpty) {
+      await loadToken();
+    }
+  }
+
   Future<void> setToken(String? token) async {
     _token = token;
     if (token != null) {
@@ -37,10 +45,13 @@ class ApiClient {
 
   String? get token => _token;
 
-  Map<String, String> _headers({bool json = true, bool auth = true}) {
+  Future<Map<String, String>> _headers({bool json = true, bool auth = true}) async {
+    if (auth) await ensureToken();
     final h = <String, String>{};
     if (json) h['Content-Type'] = 'application/json';
-    if (auth && _token != null) h['Authorization'] = 'Bearer $_token';
+    if (auth && _token != null && _token!.isNotEmpty) {
+      h['Authorization'] = 'Bearer $_token';
+    }
     return h;
   }
 
@@ -51,35 +62,39 @@ class ApiClient {
   }
 
   Future<dynamic> get(String path, {Map<String, String>? query, bool auth = true}) async {
+    final uri = _uri(path, query);
+    if (kDebugMode) debugPrint('API GET $uri auth=$auth token=${_token != null}');
     final res = await http
-        .get(_uri(path, query), headers: _headers(auth: auth))
+        .get(uri, headers: await _headers(auth: auth))
         .timeout(kApiQueryTimeout);
     return _decode(res);
   }
 
   Future<dynamic> post(String path, {Object? body, bool auth = true}) async {
+    final uri = _uri(path);
+    if (kDebugMode) debugPrint('API POST $uri auth=$auth');
     final res = await http
-        .post(_uri(path), headers: _headers(auth: auth), body: body != null ? jsonEncode(body) : null)
+        .post(uri, headers: await _headers(auth: auth), body: body != null ? jsonEncode(body) : null)
         .timeout(kApiQueryTimeout);
     return _decode(res);
   }
 
   Future<dynamic> put(String path, {Object? body}) async {
     final res = await http
-        .put(_uri(path), headers: _headers(), body: jsonEncode(body))
+        .put(_uri(path), headers: await _headers(), body: jsonEncode(body))
         .timeout(kApiQueryTimeout);
     return _decode(res);
   }
 
   Future<dynamic> patch(String path, {Object? body}) async {
     final res = await http
-        .patch(_uri(path), headers: _headers(), body: jsonEncode(body))
+        .patch(_uri(path), headers: await _headers(), body: jsonEncode(body))
         .timeout(kApiQueryTimeout);
     return _decode(res);
   }
 
   Future<dynamic> delete(String path) async {
-    final res = await http.delete(_uri(path), headers: _headers()).timeout(kApiQueryTimeout);
+    final res = await http.delete(_uri(path), headers: await _headers()).timeout(kApiQueryTimeout);
     return _decode(res);
   }
 
@@ -92,7 +107,10 @@ class ApiClient {
     if (bytes == null || bytes.isEmpty) return null;
     final ext = extension == 'jpeg' ? 'jpg' : extension;
     final req = http.MultipartRequest('POST', _uri('/files/fotos'));
-    if (_token != null) req.headers['Authorization'] = 'Bearer $_token';
+    await ensureToken();
+    if (_token != null && _token!.isNotEmpty) {
+      req.headers['Authorization'] = 'Bearer $_token';
+    }
     req.fields['pasta'] = pasta;
     req.files.add(http.MultipartFile.fromBytes(
       'file',
@@ -130,13 +148,13 @@ Future<T> comTimeout<T>(Future<T> future, {Duration? timeout}) {
 
 String mensagemErroApi(Object erro, {String recurso = 'dados'}) {
   if (erro is TimeoutException) {
-    return 'Tempo esgotado ao carregar $recurso. Verifique sua conexão.';
+    return 'Tempo esgotado ao carregar $recurso. Verifique sua conexão e o servidor ($apiBaseUrl).';
   }
   if (erro is ApiException) {
     if (erro.statusCode == 401 || erro.statusCode == 403) {
-      return 'Sem permissão para acessar $recurso. Verifique seu login.';
+      return 'Sem permissão para acessar $recurso. Faça login novamente.';
     }
     return erro.message;
   }
-  return 'Não foi possível carregar $recurso. Tente novamente.';
+  return 'Não foi possível carregar $recurso. Verifique sua conexão ($apiBaseUrl).';
 }

@@ -13,13 +13,12 @@ class TokenStorage {
     } catch (e) {
       debugPrint('TokenStorage.read secure: $e');
     }
-    if (kIsWeb) {
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        return prefs.getString(_key);
-      } catch (e) {
-        debugPrint('TokenStorage.read prefs: $e');
-      }
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final fallback = prefs.getString(_key);
+      if (fallback != null && fallback.isNotEmpty) return fallback;
+    } catch (e) {
+      debugPrint('TokenStorage.read prefs: $e');
     }
     return null;
   }
@@ -30,9 +29,11 @@ class TokenStorage {
     } catch (e) {
       debugPrint('TokenStorage.write secure: $e');
     }
-    if (kIsWeb) {
+    try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_key, token);
+    } catch (e) {
+      debugPrint('TokenStorage.write prefs: $e');
     }
   }
 
@@ -42,9 +43,11 @@ class TokenStorage {
     } catch (e) {
       debugPrint('TokenStorage.clear secure: $e');
     }
-    if (kIsWeb) {
+    try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_key);
+    } catch (e) {
+      debugPrint('TokenStorage.clear prefs: $e');
     }
   }
 }

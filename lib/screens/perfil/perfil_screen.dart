@@ -398,16 +398,41 @@ class _PerfilScreenState extends State<PerfilScreen> {
                       },
                     ),
                     if (_alertasSom || _alertasVisual)
-                      ListTile(
-                        leading: const JFightLogoImage(height: 32, width: 32, borderRadius: 8),
-                        title: const Text('Testar alerta'),
-                        subtitle: const Text('Ouve e vê como ficará a notificação'),
-                        trailing: const Icon(Icons.chevron_right),
+                      InkWell(
                         onTap: () => AppAlertService.alertar(
                           context,
                           titulo: 'J FIGHT',
                           mensagem: 'Exemplo de alerta com som e logo da academia.',
                           cor: verdeEscuro,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          child: Row(
+                            children: [
+                              const JFightLogoImage(height: 32, width: 32, borderRadius: 8),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Testar alerta',
+                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Ouve e vê como ficará a notificação',
+                                      style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                                      softWrap: true,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(Icons.chevron_right, color: Colors.grey.shade500),
+                            ],
+                          ),
                         ),
                       ),
                   ],

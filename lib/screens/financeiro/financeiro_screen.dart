@@ -60,37 +60,30 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> with SingleTickerPr
   }
 
   Future<void> _load({bool sincronizarMP = true}) async {
+    if (!mounted) return;
     setState(() {
       _loading = true;
       _erro = null;
     });
 
     try {
-      final results = await Future.wait([
+      final results = await comTimeout(Future.wait([
         _mensRepo.listar(mes: _mes, ano: _ano),
         _mensRepo.listar(ano: _ano),
         _alunoRepo.listar(ativo: true),
         _configRepo.obter(),
         _turmaRepo.listar(),
-        _turmaRepo.alunoIdsPorTodasTurmas(),
-        MercadoPagoService.instance.getAccessToken(),
-      ]);
+      ]), timeout: const Duration(seconds: 30));
       if (!mounted) return;
       final turmas = results[4] as List<Turma>;
-      var mapTurma = results[5] as Map<String, List<String>>;
-      for (final t in turmas) {
-        mapTurma.putIfAbsent(t.id, () => []);
-      }
-      final token = results[6] as String?;
       setState(() {
         _mensalidades = results[0] as List<Mensalidade>;
         _mensalidadesAno = results[1] as List<Mensalidade>;
         _alunos = results[2] as List<Aluno>;
         _config = results[3] as FinanceiroConfig;
         _turmas = turmas;
-        _alunoIdsPorTurma = mapTurma;
-        _mpConfigurado = token != null && token.isNotEmpty;
       });
+      _carregarDadosSecundariosEmBackground();
       if (sincronizarMP) {
         _sincronizarMpEmBackground();
       }
@@ -100,6 +93,25 @@ class _FinanceiroScreenState extends State<FinanceiroScreen> with SingleTickerPr
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _carregarDadosSecundariosEmBackground() async {
+    try {
+      final results = await Future.wait([
+        _turmaRepo.alunoIdsPorTodasTurmas(),
+        MercadoPagoService.instance.getAccessToken(),
+      ]);
+      if (!mounted) return;
+      var mapTurma = results[0] as Map<String, List<String>>;
+      for (final t in _turmas) {
+        mapTurma.putIfAbsent(t.id, () => []);
+      }
+      final token = results[1] as String?;
+      setState(() {
+        _alunoIdsPorTurma = mapTurma;
+        _mpConfigurado = token != null && token.isNotEmpty;
+      });
+    } catch (_) {}
   }
 
   Future<void> _sincronizarMpEmBackground() async {
