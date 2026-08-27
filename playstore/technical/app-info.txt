@@ -4,7 +4,7 @@ Namespace Android: com.jracingdev.jfight
 Versão (pubspec): 1.7.22+53
 minSdk: 23
 compileSdk: 36
-targetSdk: flutter.targetSdkVersion
+targetSdk: 36
 
 Google OAuth / SHA:
 1) Gere o upload keystore (ver signing.md)

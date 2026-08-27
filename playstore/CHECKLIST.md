@@ -4,7 +4,7 @@
 |---|---|---|
 | `applicationId` / package `com.jracingdev.jfight` | PASS | Confirmado em `android/app/build.gradle.kts` e `MainActivity.kt`. |
 | `compileSdk` | PASS | `36` configurado. |
-| `targetSdk` | PASS | Usa `flutter.targetSdkVersion` (alinhado ao Flutter atual). |
+| `targetSdk` | PASS | `36` (Android 16) configurado. |
 | `minSdk` | PASS | `23` (compatível com libs usadas). |
 | `versionCode` / `versionName` | PASS | Vêm de `pubspec` (`1.7.22+53`) via Flutter Gradle. |
 | `android:exported` activity principal | PASS | `MainActivity` com `android:exported="true"`. |
