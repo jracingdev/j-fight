@@ -156,5 +156,13 @@ String mensagemErroApi(Object erro, {String recurso = 'dados'}) {
     }
     return erro.message;
   }
+  final s = erro.toString().toLowerCase();
+  if (s.contains('socket') ||
+      s.contains('failed host lookup') ||
+      s.contains('network is unreachable') ||
+      s.contains('connection refused') ||
+      s.contains('connection reset')) {
+    return 'Sem conexão ao carregar $recurso. Verifique a internet e o servidor.';
+  }
   return 'Não foi possível carregar $recurso. Verifique sua conexão ($apiBaseUrl).';
 }

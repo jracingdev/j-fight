@@ -22,12 +22,17 @@ import '../../widgets/turmas_aluno_card.dart';
 import '../../widgets/contatos_card.dart';
 import '../../widgets/turmas_grafico_card.dart';
 import '../../widgets/quadro_medalhas_card.dart';
+import '../../widgets/quadro_faixas_card.dart';
+import '../../widgets/quadro_aniversariantes_card.dart';
 import '../../repositories/medalha_repository.dart';
 import '../../models/medalha.dart';
 import '../medalhas/medalhas_admin_screen.dart';
 import '../../core/avisos/aviso_lido_service.dart';
 import '../../core/medalhas/medalha_lido_service.dart';
 import '../../core/aniversario/aniversario_aviso_service.dart';
+import '../../core/aniversario/aniversario_mes_aviso_service.dart';
+import '../../core/eventos/evento_lido_service.dart';
+import '../../core/api/api_errors.dart';
 import '../../utils/aniversario_utils.dart';
 import '../../utils/date_utils.dart';
 import '../presenca/presenca_admin_screen.dart';
@@ -58,10 +63,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, int> _contagemTurmas = {};
   List<Medalha> _medalhas = [];
   List<Aluno> _aniversariantesTurma = [];
+  List<Aluno> _aniversariantesMes = [];
   bool _mostrarAniversarioAviso = false;
   int _avisosNaoLidos = 0;
   int _medalhasNovas = 0;
+  int _eventosNovos = 0;
   bool _loading = true;
+  String? _erroLoad;
 
   @override
   void initState() {
@@ -92,6 +100,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _todasTurmas = results[4] as List<Turma>;
           _contagemTurmas = results[5] as Map<String, int>;
           _medalhas = results[6] as List<Medalha>;
+          _aniversariantesMes = aniversariantesDoMes(alunos: results[0] as List<Aluno>);
+          _erroLoad = null;
           _loading = false;
         });
       } else {
@@ -100,6 +110,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _avisoRepo.listar(apenasAtivos: true),
           _eventoRepo.listar(),
           MedalhaRepository().listar(),
+          _alunoRepo.listar(ativo: true),
         ]);
         List<Turma> turmas = [];
         final aluno = auth.alunoVinculado;
@@ -107,29 +118,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
           turmas = await TurmaRepository().turmasDoAluno(aluno.id);
         }
         final avisos = results[0] as List<Aviso>;
+        final eventos = results[1] as List<Evento>;
         final medalhas = results[2] as List<Medalha>;
+        final todosAlunos = results[3] as List<Aluno>;
         final naoLidos = await AvisoLidoService().contarNaoLidos(avisos);
         final medalhasNovas = await MedalhaLidoService().contarNovas(medalhas);
+        final eventosNovos = await EventoLidoService().contarNaoLidos(eventos);
         var aniversariantes = <Aluno>[];
         var mostrarAniversario = false;
+        var doMes = <Aluno>[];
         if (aluno != null) {
           aniversariantes = await carregarAniversariantesTurma(_alunoRepo, aluno.id);
           mostrarAniversario = await AniversarioAvisoService().avisoPendente(aniversariantes.length);
+          final colegas = await _alunoRepo.listarColegasDeTurmas(aluno.id);
+          doMes = aniversariantesDoMes(alunos: [aluno, ...colegas]);
+        } else {
+          doMes = aniversariantesDoMes(alunos: todosAlunos);
         }
         if (mounted) setState(() {
           _avisos = avisos;
-          _eventos = results[1] as List<Evento>;
+          _eventos = eventos;
           _medalhas = medalhas;
+          _alunos = todosAlunos;
           _minhasTurmas = turmas;
           _avisosNaoLidos = naoLidos;
           _medalhasNovas = medalhasNovas;
+          _eventosNovos = eventosNovos;
           _aniversariantesTurma = aniversariantes;
+          _aniversariantesMes = doMes;
           _mostrarAniversarioAviso = mostrarAniversario;
+          _erroLoad = null;
           _loading = false;
         });
       }
-    } catch (_) {
-      if (mounted) setState(() => _loading = false);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _erroLoad = mensagemErroApi(e, recurso: 'o painel inicial');
+        });
+      }
     }
   }
 
@@ -152,10 +180,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: verdeEscuro))
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: isAdmin ? _buildAdmin() : _buildAluno(),
-            ),
+          : _erroLoad != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.cloud_off_outlined, size: 48, color: Colors.grey.shade500),
+                        const SizedBox(height: 12),
+                        Text(_erroLoad!, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey.shade700)),
+                        const SizedBox(height: 16),
+                        FilledButton.icon(
+                          onPressed: () {
+                            setState(() => _loading = true);
+                            _load();
+                          },
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Tentar novamente'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: isAdmin ? _buildAdmin() : _buildAluno(),
+                ),
     );
   }
 
@@ -241,6 +292,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _load();
           },
         ),
+        const SizedBox(height: 20),
+
+        _SectionTitle('Quadro de faixas'),
+        QuadroFaixasCard(alunos: _alunos),
+        const SizedBox(height: 20),
+
+        _SectionTitle('Aniversariantes do mês'),
+        QuadroAniversariantesCard(aniversariantes: _aniversariantesMes),
         const SizedBox(height: 20),
 
         _EventosCard(eventos: _eventos, isAdmin: true, onRefresh: _load),
@@ -397,8 +456,60 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         QuadroMedalhasCard(medalhas: _medalhas),
         const SizedBox(height: 20),
+        _SectionTitle('Quadro de faixas'),
+        QuadroFaixasCard(alunos: _alunos, apenasVisiveis: true),
+        const SizedBox(height: 20),
+        _SectionTitle('Aniversariantes do mês'),
+        QuadroAniversariantesCard(
+          aniversariantes: _aniversariantesMes,
+          alunoAtualId: aluno?.id,
+          onMarcarVisto: () async {
+            await AniversarioMesAvisoService().marcarVistoMes();
+            widget.onAvisosLidos?.call();
+          },
+        ),
+        const SizedBox(height: 20),
         _SectionTitle('Próximos Eventos'),
-        _EventosCard(eventos: _eventos, isAdmin: false),
+        if (_eventosNovos > 0)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Material(
+              color: Colors.indigo.shade50,
+              borderRadius: BorderRadius.circular(10),
+              child: InkWell(
+                onTap: () async {
+                  await EventoLidoService().marcarComoLidos(_eventos.map((e) => e.id));
+                  if (mounted) setState(() => _eventosNovos = 0);
+                  widget.onAvisosLidos?.call();
+                },
+                borderRadius: BorderRadius.circular(10),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  child: Row(
+                    children: [
+                      Icon(Icons.event_available, color: Colors.indigo.shade800, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          '$_eventosNovos evento(s)/campeonato(s) novo(s) — toque para marcar como visto',
+                          style: TextStyle(fontWeight: FontWeight.w700, color: Colors.indigo.shade900, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        _EventosCard(
+          eventos: _eventos,
+          isAdmin: false,
+          onRefresh: () async {
+            await EventoLidoService().marcarComoLidos(_eventos.map((e) => e.id));
+            widget.onAvisosLidos?.call();
+            _load();
+          },
+        ),
         const SizedBox(height: 20),
         _SectionTitle('Fale conosco'),
         const ContatosCard(),
@@ -655,7 +766,8 @@ class _EventosCard extends StatelessWidget {
             );
           }),
         if (!isAdmin) ListTile(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CalendarioScreen())),
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CalendarioScreen()))
+              .then((_) => onRefresh?.call()),
           title: const Text('Ver calendário completo', style: TextStyle(color: verdeEscuro, fontWeight: FontWeight.w600, fontSize: 13)),
           trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: verdeEscuro),
         ),

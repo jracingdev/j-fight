@@ -7,6 +7,11 @@ const List<String> faixas = [
   'azul', 'roxa', 'marrom', 'preta',
 ];
 
+String labelFaixa(String faixa) =>
+    faixa.isEmpty ? '—' : '${faixa[0].toUpperCase()}${faixa.substring(1)}';
+
+String labelGrau(int grau) => grau <= 0 ? 'Sem grau' : '$grau° grau';
+
 const List<String> meses = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',

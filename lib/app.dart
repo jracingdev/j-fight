@@ -8,6 +8,7 @@ import 'core/loja/loja_publica_url.dart';
 import 'core/theme.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/loja/loja_publica_screen.dart';
+import 'utils/app_scroll_behavior.dart';
 import 'widgets/cadastro_gate.dart';
 
 class JFightApp extends StatefulWidget {
@@ -29,6 +30,7 @@ class _JFightAppState extends State<JFightApp> {
     return MaterialApp(
       title: 'J FIGHT',
       theme: appTheme(),
+      scrollBehavior: const AppScrollBehavior(),
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
