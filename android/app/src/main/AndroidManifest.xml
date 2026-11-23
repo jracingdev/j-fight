@@ -26,6 +26,8 @@
         <package android:name="com.whatsapp.w4b"/>
     </queries>
 
+    <!-- Trava retrato não deve exigir hardware: evita restringir tablets/Chromebooks/XR na Play -->
+    <uses-feature android:name="android.hardware.screen.portrait" android:required="false" />
     <application
         android:label="J FIGHT Academia"
         android:name="${applicationName}"
